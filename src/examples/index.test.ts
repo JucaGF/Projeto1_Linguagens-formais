@@ -1,33 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import type { Automaton } from '@/lib/automaton/types'
-import { EPSILON } from '@/lib/automaton/types'
+import { simulate } from '@/lib/automaton/simulate'
 import { EXAMPLES, PDF_EXAMPLE } from './index'
-
-function accepts(automaton: Automaton, word: string): boolean {
-  const closure = (ids: Set<string>): Set<string> => {
-    const stack = [...ids]
-    while (stack.length > 0) {
-      const from = stack.pop()
-      for (const t of automaton.transitions) {
-        if (t.from === from && t.symbols.includes(EPSILON) && !ids.has(t.to)) {
-          ids.add(t.to)
-          stack.push(t.to)
-        }
-      }
-    }
-    return ids
-  }
-  const start = automaton.states.find((s) => s.isInitial)
-  let current = closure(new Set(start ? [start.id] : []))
-  for (const symbol of word) {
-    const next = new Set<string>()
-    for (const t of automaton.transitions) {
-      if (current.has(t.from) && t.symbols.includes(symbol)) next.add(t.to)
-    }
-    current = closure(next)
-  }
-  return automaton.states.some((s) => s.isAccepting && current.has(s.id))
-}
 
 function wordsUpTo(length: number): string[] {
   let level = ['']
@@ -70,7 +43,7 @@ describe('EXAMPLES', () => {
   it.each(EXAMPLES.map((e) => [e.id, e] as const))('%s reconhece a linguagem anunciada', (id, example) => {
     const inLanguage = languages[id]
     for (const word of wordsUpTo(6)) {
-      expect(accepts(example.automaton, word), `"${word}"`).toBe(inLanguage(word))
+      expect(simulate(example.automaton, word).accepted, `"${word}"`).toBe(inLanguage(word))
     }
   })
 })
