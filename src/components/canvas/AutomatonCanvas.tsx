@@ -199,7 +199,7 @@ export function AutomatonCanvas() {
       </CanvasHint>
       <CanvasHint
         visible={automaton.states.length > 0 && simulation === null}
-        className="inset-x-0 top-14 px-3"
+        className="inset-x-0 top-14 px-3 @max-2xl/canvas:px-12"
       >
         Botão direito num estado: inicial, aceitação, renomear
       </CanvasHint>
