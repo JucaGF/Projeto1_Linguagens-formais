@@ -17,8 +17,11 @@ export interface ExtendedJson {
 
 export type ParseResult = { ok: true; automaton: Automaton } | { ok: false; error: string }
 
-/** Um link é entrada não confiável: limita o texto antes de descomprimi-lo. */
-const MAX_SHARE_LENGTH = 200_000
+/** Um link é entrada não confiável: limita o código antes de descomprimi-lo. */
+export const MAX_SHARE_LENGTH = 20_000
+
+/** E limita o texto descomprimido antes do JSON.parse, já que pouco código pode render muito texto. */
+export const MAX_SHARE_TEXT_LENGTH = 500_000
 
 const INVALID_JSON = 'JSON inválido'
 const UNRECOGNIZED = 'Formato não reconhecido'
@@ -79,7 +82,7 @@ export function decodeShare(s: string): Automaton | null {
   if (s.length > MAX_SHARE_LENGTH) return null
   try {
     const text = decompressFromEncodedURIComponent(s)
-    if (!text) return null
+    if (!text || text.length > MAX_SHARE_TEXT_LENGTH) return null
     const value: unknown = JSON.parse(text)
     if (!isRecord(value)) return null
     const result = parseExtended(value)

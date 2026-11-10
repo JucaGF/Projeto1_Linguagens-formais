@@ -499,16 +499,24 @@ describe('link compartilhável', () => {
 
   describe('tamanho do link', () => {
     it('aceita um autômato grande abaixo do limite', () => {
-      const big = scatter(3000)
+      const big = scatter(400)
       const encoded = encodeShare(big)
-      expect(encoded.length).toBeGreaterThan(100_000)
-      expect(encoded.length).toBeLessThanOrEqual(200_000)
+      expect(encoded.length).toBeGreaterThan(10_000)
+      expect(encoded.length).toBeLessThanOrEqual(20_000)
       expect(decodeShare(encoded)).toEqual(big)
     })
 
-    it('recusa um link com mais de 200 mil caracteres, mesmo que seja válido', () => {
-      const encoded = encodeShare(scatter(7000))
-      expect(encoded.length).toBeGreaterThan(200_000)
+    it('recusa um link com mais de 20 mil caracteres, mesmo que seja válido', () => {
+      const encoded = encodeShare(scatter(1000))
+      expect(encoded.length).toBeGreaterThan(20_000)
+      expect(decodeShare(encoded)).toBeNull()
+    })
+
+    it('recusa um link curto que descomprime para mais de 500 mil caracteres', () => {
+      const doc = draft()
+      doc.automaton.states[0].label = 'q'.repeat(500_000)
+      const encoded = compressToEncodedURIComponent(JSON.stringify(doc))
+      expect(encoded.length).toBeLessThan(20_000)
       expect(decodeShare(encoded)).toBeNull()
     })
   })
