@@ -88,12 +88,27 @@ describe('simulate', () => {
     expect(step.fired).toEqual(['q0-q0', 'q0-q1'])
   })
 
-  it('o fecho-ε vale depois de cada leitura', () => {
+  it('o fecho-ε inicial alimenta a leitura: só q1 lê a e q0 e q2 morrem', () => {
     const afn = example('as-ou-bs')
     const trace = simulate(afn, 'aa')
     expect(trace.steps[1]).toEqual({ consumed: 1, symbol: 'a', active: ['q1'], fired: ['q1-q1'], died: ['q0', 'q2'] })
     expect(trace.accepted).toBe(true)
     expect(simulate(afn, 'ab').accepted).toBe(false)
+  })
+
+  it('o fecho-ε vale depois de cada leitura', () => {
+    const afn = build({
+      states: ['q0', 'q1', 'q2'],
+      initial: 'q0',
+      accepting: ['q2'],
+      transitions: [
+        ['q0', 'a', 'q1'],
+        ['q1', 'ε', 'q2'],
+      ],
+    })
+    const trace = simulate(afn, 'a')
+    expect(trace.steps[1]).toEqual({ consumed: 1, symbol: 'a', active: ['q1', 'q2'], fired: ['q0-q1'], died: [] })
+    expect(trace.accepted).toBe(true)
   })
 
   it('o caractere ε na entrada é um símbolo comum, não segue transição-ε', () => {
