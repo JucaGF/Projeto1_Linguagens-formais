@@ -5,6 +5,7 @@ import { simulate } from '@/lib/automaton/simulate'
 import type { SimTrace } from '@/lib/automaton/simulate'
 import { parseSymbols } from '@/lib/automaton/symbols'
 import type { Automaton, Point, StateId, TransitionId } from '@/lib/automaton/types'
+import { readSavedAutomaton, saveAutomaton } from './saved'
 
 export type Tool = 'select' | 'add-state' | 'add-transition' | 'delete'
 export type Selection = { kind: 'state' | 'transition'; id: string } | null
@@ -98,7 +99,8 @@ export const useEditor = create<EditorState>()(
       }
 
       return {
-        automaton: ops.emptyAutomaton(),
+        // o autômato salvo é o estado inicial: não entra no histórico nem anima a entrada
+        automaton: readSavedAutomaton() ?? ops.emptyAutomaton(),
         tool: 'select',
         selection: null,
         pendingFrom: null,
@@ -235,4 +237,8 @@ useEditor.subscribe((state, previous) => {
   ) {
     useEditor.setState({ simulation: null, pendingFrom: null, selection, pendingTransition: dialog })
   }
+})
+
+useEditor.subscribe((state, previous) => {
+  if (state.automaton !== previous.automaton) saveAutomaton(state.automaton)
 })
