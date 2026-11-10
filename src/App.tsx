@@ -8,8 +8,8 @@ import { Toaster } from '@/components/ui/sonner'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts'
 
-/** Os toasts sobem da base, longe da ilha de status; no celular, acima da gaveta fechada. */
-const TOAST_OFFSET = { bottom: 88 }
+/** Os toasts sobem logo acima do dock (`--toast-bottom` em index.css), em qualquer largura. */
+const TOAST_OFFSET = { bottom: 'var(--toast-bottom)' }
 
 /** A primeira dica espera um pouco; as vizinhas abrem na hora, enquanto o ponteiro passa. */
 const TOOLTIP_DELAY_MS = 500

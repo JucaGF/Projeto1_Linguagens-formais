@@ -69,6 +69,11 @@ export function SimulationPanel() {
             id={inputId}
             value={input}
             onChange={(event) => setInput(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key !== 'Escape' || !useEditor.getState().simulation) return
+              event.stopPropagation()
+              useEditor.getState().stopSimulation()
+            }}
             placeholder="ex.: abba"
             autoComplete="off"
             spellCheck={false}

@@ -402,6 +402,12 @@
   --edge-color: var(--canvas-firing);
 }
 
+/* Selecionar pelo teclado troca as cores na hora; o fade fica para o ponteiro */
+
+.automaton-canvas[data-input='keyboard'] :is(.state-halo, .edge-tone) {
+  transition: none;
+}
+
 /* Simulação: a aresta usada fica mais grossa, e um token percorre a aresta a cada passo */
 
 .transition-path[data-tone='firing'] {
@@ -467,6 +473,37 @@
 
   .side-panel[data-open='true'] {
     transform: none;
+  }
+}
+
+/*
+ * Dock e toasts: os toasts sobem logo acima do dock, sem cobri-lo. O dock tem no máximo 52px
+ * (botões de 40px e 6px de respiro). Com ponteiro fino há também a faixa das dicas acima do dock.
+ */
+
+:root {
+  --dock-bottom: 16px;
+  --dock-height: 52px;
+  --dock-clearance: 16px;
+  --toast-bottom: calc(var(--dock-bottom) + var(--dock-height) + var(--dock-clearance));
+}
+
+@media (width < 48rem) {
+  :root {
+    --dock-bottom: 72px;
+  }
+}
+
+@media (hover: hover) and (pointer: fine) {
+  :root {
+    --dock-clearance: 60px;
+  }
+}
+
+/* Com o painel de 380px ao lado, o toast centraliza sobre o canvas, como o dock */
+@media (width >= 48rem) {
+  html [data-sonner-toaster][data-x-position='center'] {
+    left: calc(50% - 190px);
   }
 }
 

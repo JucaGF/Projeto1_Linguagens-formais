@@ -2,6 +2,7 @@ import { Handle, type NodeProps, Position } from '@xyflow/react'
 import { PencilIcon, Trash2Icon } from 'lucide-react'
 import { motion, useReducedMotion } from 'motion/react'
 import { type CSSProperties, type KeyboardEvent, useRef, useState } from 'react'
+import { flushSync } from 'react-dom'
 import {
   ContextMenu,
   ContextMenuCheckboxItem,
@@ -133,9 +134,9 @@ export function StateNode({ id, data }: NodeProps<StateFlowNode>) {
       <ContextMenuTrigger asChild>
         <div
           ref={nodeRef}
-          role="button"
-          tabIndex={0}
-          aria-label={describeState(data)}
+          role={renaming ? undefined : 'button'}
+          tabIndex={renaming ? undefined : 0}
+          aria-label={renaming ? undefined : describeState(data)}
           className="state-node"
           data-selected={data.selected}
           data-pending={data.pending}
@@ -175,7 +176,7 @@ export function StateNode({ id, data }: NodeProps<StateFlowNode>) {
               label="Nome do estado"
               apply={(label) => useEditor.getState().renameState(id, label)}
               close={(byKeyboard) => {
-                setRenaming(false)
+                flushSync(() => setRenaming(false))
                 if (byKeyboard) nodeRef.current?.focus()
               }}
               style={RENAME_INPUT}

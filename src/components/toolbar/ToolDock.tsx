@@ -33,6 +33,7 @@ import {
   useState,
   useSyncExternalStore,
 } from 'react'
+import { Toolbar } from 'radix-ui'
 import { toast } from 'sonner'
 import { useStore } from 'zustand'
 import { FIT_VIEW } from '@/components/canvas/toFlow'
@@ -77,7 +78,10 @@ const keyOf = (tool: Tool) =>
     .find((key) => TOOL_KEYS[key] === tool)
     ?.toUpperCase()
 
-const IS_MAC = /Mac|iPhone|iPad/.test(navigator.platform)
+const platform =
+  (navigator as Navigator & { userAgentData?: { platform: string } }).userAgentData?.platform ??
+  navigator.userAgent
+const IS_MAC = /mac|iphone|ipad/i.test(platform)
 const UNDO_KEYS = IS_MAC ? '⌘Z' : 'Ctrl+Z'
 const REDO_KEYS = IS_MAC ? '⇧⌘Z' : 'Ctrl+Shift+Z'
 
@@ -146,14 +150,14 @@ const MAGNIFY_RANGE = 110
 const MAGNIFY_SCALE = 1.16
 const MAGNIFY_SPRING = { mass: 0.1, stiffness: 170, damping: 14 }
 
+const finePointerQuery = window.matchMedia(FINE_POINTER)
+
 function subscribeFinePointer(onChange: () => void) {
-  const query = window.matchMedia(FINE_POINTER)
-  query.addEventListener('change', onChange)
-  return () => query.removeEventListener('change', onChange)
+  finePointerQuery.addEventListener('change', onChange)
+  return () => finePointerQuery.removeEventListener('change', onChange)
 }
 
-const useFinePointer = () =>
-  useSyncExternalStore(subscribeFinePointer, () => window.matchMedia(FINE_POINTER).matches)
+const useFinePointer = () => useSyncExternalStore(subscribeFinePointer, () => finePointerQuery.matches)
 
 const PointerX = createContext<MotionValue<number> | null>(null)
 
@@ -188,11 +192,20 @@ const DOCK_BUTTON =
   'focus-visible:ring-2 focus-visible:ring-(--canvas-selection) ' +
   'disabled:text-neutral-300 disabled:hover:bg-transparent [&_svg]:size-[18px]'
 
+/** Um botão do dock. Fica dentro de `Toolbar.Button` ou `Toolbar.ToggleItem`, que dão o foco itinerante. */
 function DockButton({ icon: Icon, ...props }: ComponentProps<'button'> & { icon: LucideIcon }) {
   return (
     <button type="button" className={DOCK_BUTTON} {...props}>
       <Icon aria-hidden />
     </button>
+  )
+}
+
+function DockAction(props: ComponentProps<typeof DockButton>) {
+  return (
+    <Toolbar.Button asChild disabled={props.disabled}>
+      <DockButton {...props} />
+    </Toolbar.Button>
   )
 }
 
@@ -218,13 +231,7 @@ function Hint({ label, keys, children }: { label: string; keys?: string; childre
 }
 
 function Separator() {
-  return (
-    <div
-      role="separator"
-      aria-orientation="vertical"
-      className="mx-0.5 h-6 w-px self-center bg-neutral-200"
-    />
-  )
+  return <Toolbar.Separator className="mx-0.5 h-6 w-px self-center bg-neutral-200" />
 }
 
 /* Itens dos menus, usados no dock largo e no menu "Mais" do dock estreito */
@@ -315,37 +322,49 @@ export function ToolDock() {
   const copy = confirmation && confirmationCopy(confirmation)
 
   return (
-    <div className="pointer-events-none absolute inset-x-0 bottom-4 z-10 flex justify-center px-3 max-md:bottom-[72px]">
+    <div className="pointer-events-none absolute inset-x-0 bottom-(--dock-bottom) z-10 flex justify-center px-3">
       <PointerX.Provider value={magnify ? pointerX : null}>
-        <div
-          role="toolbar"
+        <Toolbar.Root
           aria-label="Ferramentas"
           onMouseMove={(event) => pointerX.set(event.clientX)}
           onMouseLeave={() => pointerX.set(Infinity)}
           className="pointer-events-auto flex items-end gap-1 rounded-2xl bg-white/90 p-1.5 shadow-[0_8px_28px_oklch(0_0_0/12%),0_0_0_1px_oklch(0_0_0/7%)] backdrop-blur-md"
         >
-          {TOOLS.map(({ tool: t, label, icon }) => (
-            <DockSlot key={t}>
-              <Hint label={label} keys={keyOf(t)}>
-                <DockButton
-                  icon={icon}
-                  aria-label={label}
-                  aria-pressed={tool === t}
-                  onClick={() => useEditor.getState().setTool(t)}
-                />
-              </Hint>
-            </DockSlot>
-          ))}
+          {/* Botões alternados (aria-pressed), não rádios: o papel de grupo e de item é sobrescrito */}
+          <Toolbar.ToggleGroup
+            type="single"
+            role="group"
+            aria-label="Ferramenta"
+            value={tool}
+            onValueChange={(value) => value && useEditor.getState().setTool(value as Tool)}
+            className="flex items-end gap-1"
+          >
+            {TOOLS.map(({ tool: t, label, icon }) => (
+              <DockSlot key={t}>
+                <Hint label={label} keys={keyOf(t)}>
+                  <Toolbar.ToggleItem
+                    value={t}
+                    asChild
+                    role={undefined}
+                    aria-checked={undefined}
+                    aria-pressed={tool === t}
+                  >
+                    <DockButton icon={icon} aria-label={label} />
+                  </Toolbar.ToggleItem>
+                </Hint>
+              </DockSlot>
+            ))}
+          </Toolbar.ToggleGroup>
 
           <Separator />
           <DockSlot>
             <Hint label="Desfazer" keys={UNDO_KEYS}>
-              <DockButton icon={Undo2Icon} aria-label="Desfazer" disabled={!canUndo} onClick={undo} />
+              <DockAction icon={Undo2Icon} aria-label="Desfazer" disabled={!canUndo} onClick={undo} />
             </Hint>
           </DockSlot>
           <DockSlot>
             <Hint label="Refazer" keys={REDO_KEYS}>
-              <DockButton icon={Redo2Icon} aria-label="Refazer" disabled={!canRedo} onClick={redo} />
+              <DockAction icon={Redo2Icon} aria-label="Refazer" disabled={!canRedo} onClick={redo} />
             </Hint>
           </DockSlot>
 
@@ -355,7 +374,7 @@ export function ToolDock() {
               <DropdownMenu modal={false}>
                 <Hint label="Exemplos">
                   <DropdownMenuTrigger asChild>
-                    <DockButton icon={LibraryBigIcon} aria-label="Exemplos" />
+                    <DockAction icon={LibraryBigIcon} aria-label="Exemplos" />
                   </DropdownMenuTrigger>
                 </Hint>
                 <DockMenuContent align="center" className="w-80">
@@ -369,7 +388,7 @@ export function ToolDock() {
               <DropdownMenu modal={false}>
                 <Hint label="Exportar">
                   <DropdownMenuTrigger asChild>
-                    <DockButton icon={DownloadIcon} aria-label="Exportar" disabled={isEmpty} />
+                    <DockAction icon={DownloadIcon} aria-label="Exportar" disabled={isEmpty} />
                   </DropdownMenuTrigger>
                 </Hint>
                 <DockMenuContent align="center" className={MENU}>
@@ -381,7 +400,7 @@ export function ToolDock() {
             <Separator />
             <DockSlot>
               <Hint label="Compartilhar link">
-                <DockButton
+                <DockAction
                   icon={LinkIcon}
                   aria-label="Compartilhar link"
                   disabled={isEmpty}
@@ -393,7 +412,7 @@ export function ToolDock() {
             <Separator />
             <DockSlot>
               <Hint label="Limpar">
-                <DockButton
+                <DockAction
                   icon={Trash2Icon}
                   aria-label="Limpar"
                   disabled={isEmpty}
@@ -407,7 +426,7 @@ export function ToolDock() {
             <DropdownMenu modal={false}>
               <Hint label="Mais ações">
                 <DropdownMenuTrigger asChild>
-                  <DockButton icon={EllipsisIcon} aria-label="Mais ações" />
+                  <DockAction icon={EllipsisIcon} aria-label="Mais ações" />
                 </DropdownMenuTrigger>
               </Hint>
               <DockMenuContent align="end" className={MENU}>
@@ -433,7 +452,7 @@ export function ToolDock() {
               </DockMenuContent>
             </DropdownMenu>
           </div>
-        </div>
+        </Toolbar.Root>
       </PointerX.Provider>
 
       <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
@@ -443,7 +462,7 @@ export function ToolDock() {
               <DialogHeader>
                 <DialogTitle>{copy.title}</DialogTitle>
                 <DialogDescription>
-                  {copy.description} Dá para desfazer com {UNDO_KEYS}.
+                  {copy.description} Dá para desfazer depois.
                 </DialogDescription>
               </DialogHeader>
               <DialogFooter>

@@ -1,6 +1,7 @@
 import { EdgeLabelRenderer, type EdgeProps } from '@xyflow/react'
 import { useReducedMotion } from 'motion/react'
 import { type KeyboardEvent, useCallback, useRef, useState } from 'react'
+import { flushSync } from 'react-dom'
 import { edgeGeometry, labelCenter, selfLoopGeometry } from '@/lib/automaton/geometry'
 import { formatSymbols } from '@/lib/automaton/symbols'
 import type { State, StateId } from '@/lib/automaton/types'
@@ -148,9 +149,9 @@ export function TransitionEdge({
       <EdgeLabelRenderer>
         <div
           ref={attachLabel}
-          role="button"
-          tabIndex={0}
-          aria-label={`Transição de ${from} para ${to}: ${text}`}
+          role={editing ? undefined : 'button'}
+          tabIndex={editing ? undefined : 0}
+          aria-label={editing ? undefined : `Transição de ${from} para ${to}: ${text}`}
           className="edge-label edge-tone nodrag nopan"
           data-tone={tone}
           style={{ transform: `translate(-50%, -50%) translate(${label.x}px, ${label.y}px)` }}
@@ -164,7 +165,7 @@ export function TransitionEdge({
               label="Símbolos da transição"
               apply={(input) => useEditor.getState().setTransitionSymbols(id, input)}
               close={(byKeyboard) => {
-                setEditing(false)
+                flushSync(() => setEditing(false))
                 if (byKeyboard) labelRef.current?.focus()
               }}
               style={{ width: Math.max(56, text.length * 9 + 24), height: 26, fontSize: 15 }}

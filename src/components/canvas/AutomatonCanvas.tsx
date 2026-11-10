@@ -156,7 +156,12 @@ export function AutomatonCanvas() {
   }
 
   return (
-    <div className="automaton-canvas relative h-full w-full" data-tool={tool}>
+    <div
+      className="automaton-canvas relative h-full w-full"
+      data-tool={tool}
+      onKeyDownCapture={(event) => (event.currentTarget.dataset.input = 'keyboard')}
+      onPointerDownCapture={(event) => delete event.currentTarget.dataset.input}
+    >
       <ArrowDefs />
       <ReactFlow
         nodes={nodes}

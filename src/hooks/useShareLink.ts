@@ -2,7 +2,7 @@ import { useReactFlow } from '@xyflow/react'
 import { useCallback, useEffect, useRef } from 'react'
 import { toast } from 'sonner'
 import { FIT_VIEW } from '@/components/canvas/toFlow'
-import { decodeShare, encodeShare } from '@/lib/automaton/serialize'
+import { decodeShare, encodeShare, MAX_SHARE_LENGTH } from '@/lib/automaton/serialize'
 import { useEditor } from '@/store/editor'
 
 const HASH_PREFIX = '#a='
@@ -33,10 +33,17 @@ export function useShareLink(): { copyShareLink(): Promise<void> } {
   }, [fitView])
 
   const copyShareLink = useCallback(async () => {
+    const code = encodeShare(useEditor.getState().automaton)
+    // Um link mais longo que o limite seria recusado ao abrir
+    if (code.length > MAX_SHARE_LENGTH) {
+      toast.error('Autômato grande demais para link')
+      return
+    }
     const url = new URL(window.location.href)
-    url.hash = HASH_PREFIX.slice(1) + encodeShare(useEditor.getState().automaton)
+    url.hash = HASH_PREFIX.slice(1) + code
     try {
       await navigator.clipboard.writeText(url.toString())
+      history.replaceState(null, '', url)
       toast.success('Link copiado')
     } catch {
       toast.error('Não foi possível copiar o link')
