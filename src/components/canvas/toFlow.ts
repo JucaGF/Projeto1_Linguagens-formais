@@ -40,6 +40,9 @@ export type TransitionFlowEdge = Edge<TransitionEdgeData, 'transition'>
 
 const NODE_SIZE = 2 * STATE_RADIUS
 
+/** Enquadramento do canvas: na montagem, no botão de enquadrar e depois de carregar um autômato. */
+export const FIT_VIEW = { padding: 0.35, maxZoom: 1.25 }
+
 /**
  * Handles de tamanho zero no centro: as arestas recebem o centro do estado como `sourceX/Y`.
  * Ficam declarados no nó (além de renderizados) porque o React Flow descarta os handles medidos

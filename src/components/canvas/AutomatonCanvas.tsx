@@ -17,14 +17,19 @@ import { useEditor } from '@/store/editor'
 import { ArrowDefs } from './ArrowDefs'
 import { StateNode } from './StateNode'
 import { SymbolDialog } from './SymbolDialog'
-import { type FlowContext, type StateFlowNode, toFlowEdges, toFlowNodes } from './toFlow'
+import {
+  FIT_VIEW,
+  type FlowContext,
+  type StateFlowNode,
+  toFlowEdges,
+  toFlowNodes,
+} from './toFlow'
 import { TransitionEdge } from './TransitionEdge'
 
 const nodeTypes: NodeTypes = { state: StateNode }
 const edgeTypes: EdgeTypes = { transition: TransitionEdge }
 
 const NONE = new Set<string>()
-const FIT_VIEW = { padding: 0.35, maxZoom: 1.25 }
 
 const roundPoint = (p: Point): Point => ({ x: Math.round(p.x), y: Math.round(p.y) })
 

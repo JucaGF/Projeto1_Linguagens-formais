@@ -98,6 +98,11 @@
     --canvas-died: oklch(0.6 0.22 27);
     --canvas-delete: oklch(0.58 0.21 27);
     --canvas-delete-fill: oklch(0.97 0.02 27);
+    --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
+    --status-ok: oklch(0.6 0.15 150);
+    --status-warn: oklch(0.7 0.15 70);
+    --status-nfa-bg: oklch(0.95 0.06 60);
+    --status-nfa-ink: oklch(0.5 0.15 45);
 }
 
 .dark {
@@ -373,5 +378,66 @@
   .automaton-canvas .react-flow__controls-button:active {
     scale: 1;
     transform: none;
+  }
+}
+
+/* Notação matemática do painel: a mesma serifa itálica dos rótulos do canvas */
+
+.math {
+  font-family: var(--font-math);
+  font-style: italic;
+}
+
+/* Painel lateral; abaixo de 768px, gaveta presa à base */
+
+.side-panel {
+  --drawer-peek: 60px;
+}
+
+@media (width < 48rem) {
+  .side-panel {
+    transform: translateY(calc(100% - var(--drawer-peek)));
+    transition: transform 250ms var(--ease-drawer);
+  }
+
+  .side-panel[data-open='true'] {
+    transform: none;
+  }
+}
+
+/* Ilha de status */
+
+.status-island {
+  --tone: oklch(0.72 0 0);
+}
+
+.status-island[data-tone='dfa'] {
+  --tone: oklch(0.8 0.17 150);
+}
+
+.status-island[data-tone='incomplete'] {
+  --tone: oklch(0.86 0.15 90);
+}
+
+.status-island[data-tone='nfa'] {
+  --tone: oklch(0.77 0.16 55);
+}
+
+.status-island[data-tone='simulating'] {
+  --tone: var(--canvas-active);
+}
+
+.status-island .status-dot {
+  background: var(--tone);
+  box-shadow: 0 0 0 3px color-mix(in oklch, var(--tone) 22%, transparent);
+}
+
+.status-island:not([data-tone='empty']) .status-text {
+  color: var(--tone);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .side-panel {
+    transition: none;
   }
 }
