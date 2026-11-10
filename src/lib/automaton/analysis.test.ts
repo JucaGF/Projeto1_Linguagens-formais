@@ -68,6 +68,31 @@ describe('analyze', () => {
     expect(result.warnings).toEqual(['Nenhum estado de aceitação', 'AFD incompleto: faltam 2 transições'])
   })
 
+  it('AFD com uma única transição faltando avisa no singular', () => {
+    const a = build({
+      states: ['q0', 'q1'],
+      initial: 'q0',
+      accepting: ['q1'],
+      transitions: [['q0', 'a', 'q1']],
+    })
+    const result = analyze(a)
+    expect(result.missing).toEqual([{ stateId: 'q1', symbol: 'a' }])
+    expect(result.warnings).toEqual(['AFD incompleto: falta 1 transição'])
+  })
+
+  it('transição com símbolo e ε ao mesmo tempo gera conflito ε', () => {
+    const a = build({
+      states: ['q0', 'q1'],
+      initial: 'q0',
+      accepting: ['q1'],
+      transitions: [['q0', 'b,ε', 'q1']],
+    })
+    const result = analyze(a)
+    expect(result.alphabet).toEqual(['b'])
+    expect(result.kind).toBe('NFA')
+    expect(result.conflicts).toEqual([{ kind: 'epsilon', transitionId: 'q0-q1' }])
+  })
+
   it('estado sem caminho a partir do inicial é inalcançável', () => {
     const a = build({
       states: ['q0', 'q2'],

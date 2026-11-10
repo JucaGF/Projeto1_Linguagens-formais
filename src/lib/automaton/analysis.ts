@@ -103,7 +103,8 @@ export function analyze(a: Automaton): Analysis {
   if (initial === null) warnings.push('Nenhum estado inicial')
   if (accepting.length === 0) warnings.push('Nenhum estado de aceitação')
   for (const state of unreachable) warnings.push(`Estado inalcançável: ${state.label}`)
-  if (missing.length > 0) warnings.push(`AFD incompleto: faltam ${missing.length} transições`)
+  if (missing.length === 1) warnings.push('AFD incompleto: falta 1 transição')
+  else if (missing.length > 1) warnings.push(`AFD incompleto: faltam ${missing.length} transições`)
 
   return {
     alphabet,
