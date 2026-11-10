@@ -173,6 +173,40 @@ describe('ferramentas e seleção', () => {
     expect(editor().automaton.states.map((s) => s.label)).toEqual(['q1'])
   })
 
+  it('clickTransition com a ferramenta de seleção seleciona a transição', () => {
+    const [q0, q1] = addTwoStates()
+    pendingTransitionBetween(q0, q1)
+    editor().confirmTransition('a')
+    const [{ id }] = editor().automaton.transitions
+    editor().setTool('select')
+    editor().clickTransition(id)
+    expect(editor().selection).toEqual({ kind: 'transition', id })
+  })
+
+  it('clickTransition com a ferramenta apagar remove a transição', () => {
+    const [q0, q1] = addTwoStates()
+    pendingTransitionBetween(q0, q1)
+    editor().confirmTransition('a')
+    const [{ id }] = editor().automaton.transitions
+    editor().setTool('delete')
+    editor().clickTransition(id)
+    expect(editor().automaton.transitions).toEqual([])
+  })
+
+  it('clickTransition com as ferramentas de criação não muda nada', () => {
+    const [q0, q1] = addTwoStates()
+    pendingTransitionBetween(q0, q1)
+    editor().confirmTransition('a')
+    const [{ id }] = editor().automaton.transitions
+    const before = editor().automaton
+    for (const tool of ['add-state', 'add-transition'] as const) {
+      editor().setTool(tool)
+      editor().clickTransition(id)
+    }
+    expect(editor().automaton).toBe(before)
+    expect(editor().selection).toBeNull()
+  })
+
   it('deleteSelection remove o estado selecionado e limpa a seleção', () => {
     const [q0] = addTwoStates()
     editor().select({ kind: 'state', id: q0 })

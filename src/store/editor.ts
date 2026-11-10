@@ -40,6 +40,8 @@ export interface EditorState {
   deleteSelection(): void
   /** Select: seleciona. Add-transition: dois cliques. Delete: remove. */
   clickState(id: StateId): void
+  /** Select: seleciona. Delete: remove. As ferramentas de criação ignoram o clique. */
+  clickTransition(id: TransitionId): void
   /** Devolve a mensagem de erro (e mantém o diálogo aberto), ou `null` se a transição foi criada. */
   confirmTransition(input: string): string | null
   cancelTransition(): void
@@ -134,6 +136,19 @@ export const useEditor = create<EditorState>()(
               return
             case 'add-state':
               // estados novos nascem do clique no canvas, não de um clique em outro estado
+              return
+          }
+        },
+        clickTransition: (id) => {
+          switch (get().tool) {
+            case 'select':
+              set({ selection: { kind: 'transition', id } })
+              return
+            case 'delete':
+              edit((a) => ops.removeTransition(a, id))
+              return
+            case 'add-state':
+            case 'add-transition':
               return
           }
         },

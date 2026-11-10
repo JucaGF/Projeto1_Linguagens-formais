@@ -1,11 +1,18 @@
-import { Button } from '@/components/ui/button'
+import { ReactFlowProvider } from '@xyflow/react'
+import { AutomatonCanvas } from '@/components/canvas/AutomatonCanvas'
+import { Toaster } from '@/components/ui/sonner'
+import { TooltipProvider } from '@/components/ui/tooltip'
 
 function App() {
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center gap-4">
-      <h1 className="text-3xl font-semibold">Editor de Autômatos</h1>
-      <Button>Começar</Button>
-    </main>
+    <TooltipProvider>
+      <ReactFlowProvider>
+        <main className="h-dvh w-full overflow-hidden">
+          <AutomatonCanvas />
+        </main>
+      </ReactFlowProvider>
+      <Toaster position="top-center" />
+    </TooltipProvider>
   )
 }
 
