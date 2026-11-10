@@ -47,6 +47,29 @@
     --radius-2xl: calc(var(--radius) * 1.8);
     --radius-3xl: calc(var(--radius) * 2.2);
     --radius-4xl: calc(var(--radius) * 2.6);
+    --animate-shimmer-slide: shimmer-slide var(--speed) ease-in-out infinite alternate;
+    --animate-spin-around: spin-around calc(var(--speed) * 2) infinite linear;
+
+    @keyframes shimmer-slide {
+        to {
+            transform: translate(calc(100cqw - 100%), 0);
+        }
+    }
+
+    @keyframes spin-around {
+        0% {
+            transform: translateZ(0) rotate(0);
+        }
+        15%, 35% {
+            transform: translateZ(0) rotate(90deg);
+        }
+        65%, 85% {
+            transform: translateZ(0) rotate(270deg);
+        }
+        100% {
+            transform: translateZ(0) rotate(360deg);
+        }
+    }
 }
 
 :root {
@@ -377,6 +400,20 @@
 
 .edge-tone[data-tone='firing'] {
   --edge-color: var(--canvas-firing);
+}
+
+/* Simulação: a aresta usada fica mais grossa, e um token percorre a aresta a cada passo */
+
+.transition-path[data-tone='firing'] {
+  stroke-width: 2.25;
+}
+
+.edge-token {
+  fill: var(--canvas-firing);
+  stroke: var(--canvas-bg);
+  stroke-width: 2;
+  filter: drop-shadow(0 0 4px var(--canvas-active));
+  pointer-events: none;
 }
 
 @media (hover: hover) and (pointer: fine) {

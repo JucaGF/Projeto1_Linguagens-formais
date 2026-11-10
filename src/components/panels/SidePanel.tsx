@@ -8,17 +8,14 @@ import {
 } from '@/components/animate-ui/components/radix/tabs'
 import { FormalDefinition } from './FormalDefinition'
 import { JsonPanel } from './JsonPanel'
+import { SimulationPanel } from './SimulationPanel'
 import { TransitionTable } from './TransitionTable'
 
 const TABS: { value: string; label: string; content: ReactNode }[] = [
   { value: 'definicao', label: 'Definição', content: <FormalDefinition /> },
   { value: 'tabela', label: 'Tabela δ', content: <TransitionTable /> },
   { value: 'json', label: 'JSON', content: <JsonPanel /> },
-  {
-    value: 'simular',
-    label: 'Simular',
-    content: <p className="p-8 text-center text-sm text-muted-foreground">Em breve</p>,
-  },
+  { value: 'simular', label: 'Simular', content: <SimulationPanel /> },
 ]
 
 const CONTENT_FADE = { duration: 0.18, ease: [0.23, 1, 0.32, 1] } as const

@@ -1,4 +1,5 @@
 import { EdgeLabelRenderer, type EdgeProps } from '@xyflow/react'
+import { useReducedMotion } from 'motion/react'
 import { type KeyboardEvent, useCallback, useRef, useState } from 'react'
 import { edgeGeometry, labelCenter, selfLoopGeometry } from '@/lib/automaton/geometry'
 import { formatSymbols } from '@/lib/automaton/symbols'
@@ -40,6 +41,44 @@ function useSize(): [Size, (element: HTMLElement | null) => (() => void) | undef
   return [size, measure]
 }
 
+/** Mesma curva do `--ease-in-out` forte: movimento na tela acelera e desacelera. */
+const TOKEN_EASE = '0.77 0 0.175 1'
+
+/**
+ * A cópia viajando pela aresta no passo atual. `begin="indefinite"` + `beginElement()` porque
+ * uma animação SMIL inserida depois do carregamento do `<svg>` contaria o tempo desde o início
+ * do documento e já nasceria no fim.
+ */
+function Token({ path }: { path: string }) {
+  const start = useCallback((token: SVGCircleElement | null) => {
+    token?.querySelectorAll('animate, animateMotion').forEach((animation) => {
+      ;(animation as SVGAnimationElement).beginElement()
+    })
+  }, [])
+  return (
+    <circle ref={start} className="edge-token" r={6} opacity={0}>
+      <animateMotion
+        dur="0.6s"
+        fill="freeze"
+        begin="indefinite"
+        path={path}
+        calcMode="spline"
+        keyPoints="0;1"
+        keyTimes="0;1"
+        keySplines={TOKEN_EASE}
+      />
+      <animate
+        attributeName="opacity"
+        dur="0.6s"
+        fill="freeze"
+        begin="indefinite"
+        values="0;1;1;0"
+        keyTimes="0;0.12;0.82;1"
+      />
+    </circle>
+  )
+}
+
 const labelOf = (states: State[], id: StateId) => states.find((s) => s.id === id)?.label ?? '?'
 
 export function TransitionEdge({
@@ -54,6 +93,7 @@ export function TransitionEdge({
 }: EdgeProps<TransitionFlowEdge>) {
   const [editing, setEditing] = useState(false)
   const [labelSize, measureLabel] = useSize()
+  const reduceMotion = useReducedMotion()
   const labelRef = useRef<HTMLDivElement>(null)
   const attachLabel = useCallback(
     (element: HTMLDivElement | null) => {
@@ -104,6 +144,7 @@ export function TransitionEdge({
         strokeOpacity={0}
         strokeWidth={INTERACTION_WIDTH}
       />
+      {data.firing && !reduceMotion && <Token key={data.stepKey} path={path} />}
       <EdgeLabelRenderer>
         <div
           ref={attachLabel}

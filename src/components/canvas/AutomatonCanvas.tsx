@@ -10,6 +10,7 @@ import {
   ViewportPortal,
 } from '@xyflow/react'
 import { type MouseEvent, useEffect, useLayoutEffect, useMemo, useState } from 'react'
+import { useSimulationPlayback } from '@/hooks/useSimulationPlayback'
 import { analyze } from '@/lib/automaton/analysis'
 import { STATE_RADIUS } from '@/lib/automaton/geometry'
 import type { Automaton, Point, StateId, TransitionId } from '@/lib/automaton/types'
@@ -88,7 +89,10 @@ export function AutomatonCanvas() {
   const selection = useEditor((s) => s.selection)
   const pendingFrom = useEditor((s) => s.pendingFrom)
   const tool = useEditor((s) => s.tool)
+  const simulation = useEditor((s) => s.simulation)
   const { screenToFlowPosition } = useReactFlow()
+  // o painel desmonta a aba Simular quando ela não está à vista; o canvas está sempre montado
+  useSimulationPlayback()
 
   // a entrada anima só o estado criado pelo ponteiro; desfazer, refazer e carregar não animam
   const [created, setCreated] = useState<{ id: StateId; automaton: Automaton } | null>(null)
@@ -96,18 +100,20 @@ export function AutomatonCanvas() {
   const entering = created?.id ?? null
 
   const conflicts = useMemo(() => conflictIds(analyze(automaton).conflicts), [automaton])
+  const simStep = simulation?.trace.steps[simulation.step]
+  const stepKey = simulation?.step ?? 0
   const ctx = useMemo<FlowContext>(
     () => ({
       selection,
       pendingFrom,
-      active: NONE,
-      died: NONE,
-      fired: NONE,
+      active: simStep ? new Set(simStep.active) : NONE,
+      died: simStep ? new Set(simStep.died) : NONE,
+      fired: simStep ? new Set(simStep.fired) : NONE,
       conflicts,
-      stepKey: 0,
+      stepKey,
       entering,
     }),
-    [selection, pendingFrom, conflicts, entering],
+    [selection, pendingFrom, conflicts, entering, simStep, stepKey],
   )
 
   const flowNodes = useMemo(() => toFlowNodes(automaton, ctx), [automaton, ctx])
