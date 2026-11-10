@@ -3,21 +3,29 @@ import { MotionConfig } from 'motion/react'
 import { AutomatonCanvas } from '@/components/canvas/AutomatonCanvas'
 import { SidePanel } from '@/components/panels/SidePanel'
 import { StatusIsland } from '@/components/toolbar/StatusIsland'
+import { ToolDock } from '@/components/toolbar/ToolDock'
 import { Toaster } from '@/components/ui/sonner'
 import { TooltipProvider } from '@/components/ui/tooltip'
+import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts'
 
 /** Os toasts sobem da base, longe da ilha de status; no celular, acima da gaveta fechada. */
 const TOAST_OFFSET = { bottom: 88 }
 
+/** A primeira dica espera um pouco; as vizinhas abrem na hora, enquanto o ponteiro passa. */
+const TOOLTIP_DELAY_MS = 500
+
 function App() {
+  useKeyboardShortcuts()
+
   return (
     <MotionConfig reducedMotion="user">
-      <TooltipProvider>
+      <TooltipProvider delayDuration={TOOLTIP_DELAY_MS}>
         <ReactFlowProvider>
           <div className="flex h-dvh w-full overflow-hidden">
-            <main className="relative h-full min-w-0 flex-1 max-md:pb-15">
+            <main className="@container/canvas relative h-full min-w-0 flex-1 max-md:pb-15">
               <AutomatonCanvas />
               <StatusIsland />
+              <ToolDock />
             </main>
             <SidePanel />
           </div>

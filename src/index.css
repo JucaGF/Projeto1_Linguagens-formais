@@ -164,6 +164,14 @@
   box-shadow: 0 1px 2px oklch(0 0 0 / 6%), 0 0 0 1px oklch(0 0 0 / 6%);
 }
 
+/* Canvas estreito: os controles sobem para o canto de cima, fora do caminho do dock */
+@container canvas (width < 42rem) {
+  .automaton-canvas .react-flow__controls {
+    top: 48px;
+    bottom: auto;
+  }
+}
+
 .automaton-canvas .react-flow__controls-button {
   width: 30px;
   height: 30px;
@@ -198,11 +206,22 @@
   position: relative;
   width: 100%;
   height: 100%;
+  border-radius: 50%;
+  outline: none;
   transition: opacity 180ms var(--ease-out), scale 180ms var(--ease-out);
+}
+
+/* Só o estado criado pelo ponteiro entra animado; desfazer e carregar trocam na hora */
+.state-node[data-entering='true'] {
   @starting-style {
     opacity: 0;
     scale: 0.9;
   }
+}
+
+.state-node:focus-visible {
+  outline: 2px solid var(--canvas-selection);
+  outline-offset: 9px;
 }
 
 .react-flow__node:not(.dragging) .state-node:active {
@@ -329,6 +348,12 @@
   transition: color 150ms ease;
 }
 
+.edge-label:focus-visible {
+  outline: 2px solid var(--canvas-selection);
+  outline-offset: 1px;
+  border-radius: 4px;
+}
+
 .edge-label-text {
   display: inline-block;
   transition: scale 120ms var(--ease-out);
@@ -368,6 +393,9 @@
 @media (prefers-reduced-motion: reduce) {
   .state-node {
     transition: opacity 180ms ease;
+  }
+
+  .state-node[data-entering='true'] {
     @starting-style {
       scale: 1;
     }

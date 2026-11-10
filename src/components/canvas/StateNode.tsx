@@ -1,7 +1,7 @@
 import { Handle, type NodeProps, Position } from '@xyflow/react'
 import { PencilIcon, Trash2Icon } from 'lucide-react'
 import { motion, useReducedMotion } from 'motion/react'
-import { type CSSProperties, useRef, useState } from 'react'
+import { type CSSProperties, type KeyboardEvent, useRef, useState } from 'react'
 import {
   ContextMenu,
   ContextMenuCheckboxItem,
@@ -14,7 +14,7 @@ import { initialArrowPath, STATE_RADIUS } from '@/lib/automaton/geometry'
 import { useEditor } from '@/store/editor'
 import { arrowUrl } from './markers'
 import { InlineInput } from './InlineInput'
-import type { StateFlowNode } from './toFlow'
+import type { StateFlowNode, StateNodeData } from './toFlow'
 
 const CENTER = { x: STATE_RADIUS, y: STATE_RADIUS }
 const ACCEPTING_RING_INSET = 5
@@ -78,13 +78,50 @@ function DiedPulse() {
   )
 }
 
+/** Abre o menu de contexto do Radix, que só escuta o evento do ponteiro, a partir do teclado. */
+function openContextMenu(element: HTMLElement) {
+  const box = element.getBoundingClientRect()
+  element.dispatchEvent(
+    new MouseEvent('contextmenu', {
+      bubbles: true,
+      cancelable: true,
+      clientX: box.left + box.width / 2,
+      clientY: box.top + box.height / 2,
+    }),
+  )
+}
+
+function describeState(data: StateNodeData): string {
+  const roles = [data.isInitial && 'inicial', data.isAccepting && 'de aceitação'].filter(Boolean)
+  return ['Estado ' + data.label, ...roles].join(', ')
+}
+
 export function StateNode({ id, data }: NodeProps<StateFlowNode>) {
   const [renaming, setRenaming] = useState(false)
+  const nodeRef = useRef<HTMLDivElement>(null)
   // "Renomear" no menu só abre o campo quando o menu devolve o foco; antes disso o menu o tomaria
   const renameAfterMenu = useRef(false)
 
   const startRename = () => {
     if (useEditor.getState().tool === 'select') setRenaming(true)
+  }
+
+  // Enter age como o clique; Enter de novo num estado já selecionado (ou F2) renomeia
+  const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    if (event.target !== event.currentTarget) return
+    if (event.key === 'ContextMenu' || (event.shiftKey && event.key === 'F10')) {
+      event.preventDefault()
+      openContextMenu(event.currentTarget)
+    } else if (
+      useEditor.getState().tool === 'select' &&
+      (event.key === 'F2' || (event.key === 'Enter' && data.selected))
+    ) {
+      event.preventDefault()
+      setRenaming(true)
+    } else if (event.key === 'Enter') {
+      event.preventDefault()
+      useEditor.getState().clickState(id)
+    }
   }
 
   return (
@@ -95,11 +132,17 @@ export function StateNode({ id, data }: NodeProps<StateFlowNode>) {
     >
       <ContextMenuTrigger asChild>
         <div
+          ref={nodeRef}
+          role="button"
+          tabIndex={0}
+          aria-label={describeState(data)}
           className="state-node"
           data-selected={data.selected}
           data-pending={data.pending}
           data-active={data.active}
+          data-entering={data.entering}
           onDoubleClick={startRename}
+          onKeyDown={onKeyDown}
         >
           <svg width={2 * STATE_RADIUS} height={2 * STATE_RADIUS} aria-hidden>
             {data.isInitial && (
@@ -131,7 +174,10 @@ export function StateNode({ id, data }: NodeProps<StateFlowNode>) {
               initial={data.label}
               label="Nome do estado"
               apply={(label) => useEditor.getState().renameState(id, label)}
-              close={() => setRenaming(false)}
+              close={(byKeyboard) => {
+                setRenaming(false)
+                if (byKeyboard) nodeRef.current?.focus()
+              }}
               style={RENAME_INPUT}
             />
           ) : (
@@ -146,6 +192,7 @@ export function StateNode({ id, data }: NodeProps<StateFlowNode>) {
         onCloseAutoFocus={(event) => {
           event.preventDefault()
           if (renameAfterMenu.current) setRenaming(true)
+          else nodeRef.current?.focus()
           renameAfterMenu.current = false
         }}
       >

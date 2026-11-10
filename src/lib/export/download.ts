@@ -32,6 +32,9 @@ export async function svgToPngBlob(svg: string, scale = 2): Promise<Blob> {
     canvas.height = Math.ceil(image.naturalHeight * scale)
     const context = canvas.getContext('2d')
     if (!context) throw new Error('Canvas 2D indisponível')
+    // o tamanho arredondado para cima deixaria uma borda transparente fora do fundo do SVG
+    context.fillStyle = '#fff'
+    context.fillRect(0, 0, canvas.width, canvas.height)
     context.drawImage(image, 0, 0, canvas.width, canvas.height)
     return await new Promise<Blob>((resolve, reject) =>
       canvas.toBlob(

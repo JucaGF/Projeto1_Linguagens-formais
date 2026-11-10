@@ -11,6 +11,8 @@ export interface FlowContext {
   fired: Set<TransitionId>
   conflicts: Set<TransitionId>
   stepKey: number
+  /** Estado que o usuário acabou de criar: só ele toca a animação de entrada. */
+  entering: StateId | null
 }
 
 export type StateNodeData = {
@@ -23,6 +25,7 @@ export type StateNodeData = {
   died: boolean
   /** Muda a cada passo da simulação, para o pulso de `died` tocar de novo. */
   stepKey: number
+  entering: boolean
 }
 
 export type TransitionEdgeData = {
@@ -78,6 +81,7 @@ export function toFlowNodes(a: Automaton, ctx: FlowContext): StateFlowNode[] {
       active: ctx.active.has(s.id),
       died: ctx.died.has(s.id),
       stepKey: ctx.stepKey,
+      entering: ctx.entering === s.id,
     },
   }))
 }

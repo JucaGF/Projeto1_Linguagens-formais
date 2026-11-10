@@ -44,6 +44,11 @@ describe('estados', () => {
     expect(states[1]).toMatchObject({ x: 100, y: 0 })
   })
 
+  it('addStateAt devolve o id do estado criado', () => {
+    const id = editor().addStateAt({ x: 7, y: 9 })
+    expect(editor().automaton.states.find((s) => s.id === id)).toMatchObject({ x: 7, y: 9 })
+  })
+
   it('renameState devolve o erro e só aplica nomes válidos', () => {
     const [q0, q1] = addTwoStates()
     expect(editor().renameState(q1, 'q0')).toBe('Já existe um estado chamado "q0"')

@@ -12,6 +12,7 @@ const context = (patch: Partial<FlowContext> = {}): FlowContext => ({
   fired: new Set(),
   conflicts: new Set(),
   stepKey: 0,
+  entering: null,
   ...patch,
 })
 
@@ -61,6 +62,14 @@ describe('toFlowNodes', () => {
     )
     expect(flags).toEqual({ q0: [false, true, false, true], q1: [true, false, true, false] })
     expect(nodes.every((n) => n.data.stepKey === 3)).toBe(true)
+  })
+
+  it('só o estado recém-criado entra com animação', () => {
+    const nodes = toFlowNodes(PDF_EXAMPLE, context({ entering: 'q1' }))
+    expect(nodes.map((n) => [n.id, n.data.entering])).toEqual([
+      ['q0', false],
+      ['q1', true],
+    ])
   })
 
   it('não marca um estado quando a seleção é uma transição de mesmo id', () => {

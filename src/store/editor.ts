@@ -27,7 +27,8 @@ export interface EditorState {
 
   setTool(t: Tool): void
   select(s: Selection): void
-  addStateAt(p: Point): void
+  /** Devolve o id do estado criado. */
+  addStateAt(p: Point): StateId
   moveState(id: StateId, p: Point): void
   /** Devolve a mensagem de erro, ou `null` se o nome foi aplicado. */
   renameState(id: StateId, label: string): string | null
@@ -98,7 +99,11 @@ export const useEditor = create<EditorState>()(
         setTool: (tool) => set({ tool, pendingFrom: null }),
         select: (selection) => set({ selection }),
 
-        addStateAt: (p) => edit((a) => ops.addState(a, p).automaton),
+        addStateAt: (p) => {
+          const { automaton, state } = ops.addState(get().automaton, p)
+          commit(automaton)
+          return state.id
+        },
         moveState: (id, p) => edit((a) => ops.moveState(a, id, p)),
         renameState: (id, label) => {
           const error = ops.labelError(get().automaton, id, label)

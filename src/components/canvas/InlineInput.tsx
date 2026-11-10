@@ -6,7 +6,8 @@ interface InlineInputProps {
   label: string
   /** Aplica o valor e devolve a mensagem de erro, ou `null` se deu certo. */
   apply(value: string): string | null
-  close(): void
+  /** `byKeyboard` quando Enter ou Esc fecharam o campo: o dono devolve o foco. */
+  close(byKeyboard: boolean): void
   style?: CSSProperties
 }
 
@@ -23,19 +24,19 @@ export function InlineInput({ initial, label, apply, close, style }: InlineInput
     ref.current?.select()
   }, [])
 
-  const finish = () => {
+  const finish = (byKeyboard: boolean) => {
     closed.current = true
-    close()
+    close(byKeyboard)
   }
 
-  const submit = (keepOpenOnError: boolean) => {
+  const submit = (byKeyboard: boolean) => {
     if (closed.current) return
     const value = ref.current?.value ?? initial
     const error = value === initial ? null : apply(value)
-    if (error === null) return finish()
+    if (error === null) return finish(byKeyboard)
     toast.error(error)
-    if (keepOpenOnError) ref.current?.select()
-    else finish()
+    if (byKeyboard) ref.current?.select()
+    else finish(false)
   }
 
   return (
@@ -49,7 +50,7 @@ export function InlineInput({ initial, label, apply, close, style }: InlineInput
       style={style}
       onKeyDown={(event) => {
         if (event.key === 'Enter') submit(true)
-        if (event.key === 'Escape') finish()
+        if (event.key === 'Escape') finish(true)
       }}
       onBlur={() => submit(false)}
     />

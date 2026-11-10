@@ -12,7 +12,7 @@ import {
 import { type MouseEvent, useEffect, useLayoutEffect, useMemo, useState } from 'react'
 import { analyze } from '@/lib/automaton/analysis'
 import { STATE_RADIUS } from '@/lib/automaton/geometry'
-import type { Point, StateId, TransitionId } from '@/lib/automaton/types'
+import type { Automaton, Point, StateId, TransitionId } from '@/lib/automaton/types'
 import { useEditor } from '@/store/editor'
 import { ArrowDefs } from './ArrowDefs'
 import { StateNode } from './StateNode'
@@ -90,6 +90,11 @@ export function AutomatonCanvas() {
   const tool = useEditor((s) => s.tool)
   const { screenToFlowPosition } = useReactFlow()
 
+  // a entrada anima só o estado criado pelo ponteiro; desfazer, refazer e carregar não animam
+  const [created, setCreated] = useState<{ id: StateId; automaton: Automaton } | null>(null)
+  if (created !== null && created.automaton !== automaton) setCreated(null)
+  const entering = created?.id ?? null
+
   const conflicts = useMemo(() => conflictIds(analyze(automaton).conflicts), [automaton])
   const ctx = useMemo<FlowContext>(
     () => ({
@@ -100,8 +105,9 @@ export function AutomatonCanvas() {
       fired: NONE,
       conflicts,
       stepKey: 0,
+      entering,
     }),
-    [selection, pendingFrom, conflicts],
+    [selection, pendingFrom, conflicts, entering],
   )
 
   const flowNodes = useMemo(() => toFlowNodes(automaton, ctx), [automaton, ctx])
@@ -127,15 +133,20 @@ export function AutomatonCanvas() {
   const flowPoint = (event: MouseEvent) =>
     roundPoint(screenToFlowPosition({ x: event.clientX, y: event.clientY }))
 
+  const createState = (event: MouseEvent) => {
+    const id = useEditor.getState().addStateAt(flowPoint(event))
+    setCreated({ id, automaton: useEditor.getState().automaton })
+  }
+
   const onPaneClick = (event: MouseEvent) => {
     const editor = useEditor.getState()
-    if (editor.tool === 'add-state') return editor.addStateAt(flowPoint(event))
+    if (editor.tool === 'add-state') return createState(event)
     editor.select(null)
     editor.cancelPending()
   }
 
   const onDoubleClick = (event: MouseEvent) => {
-    if (isPane(event.target)) useEditor.getState().addStateAt(flowPoint(event))
+    if (isPane(event.target)) createState(event)
   }
 
   return (
@@ -155,6 +166,8 @@ export function AutomatonCanvas() {
         nodesDraggable={tool === 'select' || tool === 'add-state'}
         nodesConnectable={false}
         elementsSelectable={false}
+        nodesFocusable={false}
+        edgesFocusable={false}
         nodeDragThreshold={2}
         zoomOnDoubleClick={false}
         deleteKeyCode={null}

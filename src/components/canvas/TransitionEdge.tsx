@@ -1,7 +1,8 @@
 import { EdgeLabelRenderer, type EdgeProps } from '@xyflow/react'
-import { useCallback, useState } from 'react'
+import { type KeyboardEvent, useCallback, useRef, useState } from 'react'
 import { edgeGeometry, labelCenter, selfLoopGeometry } from '@/lib/automaton/geometry'
 import { formatSymbols } from '@/lib/automaton/symbols'
+import type { State, StateId } from '@/lib/automaton/types'
 import { useEditor } from '@/store/editor'
 import { InlineInput } from './InlineInput'
 import { arrowUrl, type EdgeTone } from './markers'
@@ -39,15 +40,55 @@ function useSize(): [Size, (element: HTMLElement | null) => (() => void) | undef
   return [size, measure]
 }
 
-export function TransitionEdge({ id, sourceX, sourceY, targetX, targetY, data }: EdgeProps<TransitionFlowEdge>) {
+const labelOf = (states: State[], id: StateId) => states.find((s) => s.id === id)?.label ?? '?'
+
+export function TransitionEdge({
+  id,
+  source,
+  target,
+  sourceX,
+  sourceY,
+  targetX,
+  targetY,
+  data,
+}: EdgeProps<TransitionFlowEdge>) {
   const [editing, setEditing] = useState(false)
   const [labelSize, measureLabel] = useSize()
+  const labelRef = useRef<HTMLDivElement>(null)
+  const attachLabel = useCallback(
+    (element: HTMLDivElement | null) => {
+      labelRef.current = element
+      return measureLabel(element)
+    },
+    [measureLabel],
+  )
+  const from = useEditor((s) => labelOf(s.automaton.states, source))
+  const to = useEditor((s) => labelOf(s.automaton.states, target))
   if (!data) return null
 
-  const source = { x: sourceX, y: sourceY }
+  const startEditing = () => {
+    if (useEditor.getState().tool === 'select') setEditing(true)
+  }
+
+  // Enter age como o clique; Enter de novo numa transição já selecionada (ou F2) edita
+  const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    if (event.target !== event.currentTarget) return
+    if (
+      useEditor.getState().tool === 'select' &&
+      (event.key === 'F2' || (event.key === 'Enter' && data.selected))
+    ) {
+      event.preventDefault()
+      setEditing(true)
+    } else if (event.key === 'Enter') {
+      event.preventDefault()
+      useEditor.getState().clickTransition(id)
+    }
+  }
+
+  const origin = { x: sourceX, y: sourceY }
   const geometry = data.selfLoop
-    ? selfLoopGeometry(source)
-    : edgeGeometry(source, { x: targetX, y: targetY }, data.curved)
+    ? selfLoopGeometry(origin)
+    : edgeGeometry(origin, { x: targetX, y: targetY }, data.curved)
   const { path } = geometry
   const label = labelCenter(geometry, labelSize.width, labelSize.height)
   const tone = toneOf(data)
@@ -65,21 +106,26 @@ export function TransitionEdge({ id, sourceX, sourceY, targetX, targetY, data }:
       />
       <EdgeLabelRenderer>
         <div
-          ref={measureLabel}
+          ref={attachLabel}
+          role="button"
+          tabIndex={0}
+          aria-label={`Transição de ${from} para ${to}: ${text}`}
           className="edge-label edge-tone nodrag nopan"
           data-tone={tone}
           style={{ transform: `translate(-50%, -50%) translate(${label.x}px, ${label.y}px)` }}
           onClick={() => useEditor.getState().clickTransition(id)}
-          onDoubleClick={() => {
-            if (useEditor.getState().tool === 'select') setEditing(true)
-          }}
+          onDoubleClick={startEditing}
+          onKeyDown={onKeyDown}
         >
           {editing ? (
             <InlineInput
               initial={text}
               label="Símbolos da transição"
               apply={(input) => useEditor.getState().setTransitionSymbols(id, input)}
-              close={() => setEditing(false)}
+              close={(byKeyboard) => {
+                setEditing(false)
+                if (byKeyboard) labelRef.current?.focus()
+              }}
               style={{ width: Math.max(56, text.length * 9 + 24), height: 26, fontSize: 15 }}
             />
           ) : (
