@@ -82,7 +82,7 @@ describe('islandDetails', () => {
     })
     expect(islandDetails(a, analyze(a))).toEqual({
       nfaReasons: ['δ(q0, a) tem 2 destinos', 'ε-transição de q0 para q1'],
-      warnings: ['Nenhum estado de aceitação'],
+      warnings: ['Nenhum estado de aceitação — clique com o botão direito num estado'],
     })
   })
 

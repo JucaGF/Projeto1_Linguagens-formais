@@ -23,10 +23,10 @@ O desenho e a definição formal andam juntos: o canvas fica à esquerda e, à d
 
 1. **Estado:** dê dois cliques no fundo do canvas, ou escolha a ferramenta *Estado* (`S`) e clique. O primeiro estado criado já é o inicial.
 2. **Mover e renomear:** arraste um estado para movê-lo. Com a ferramenta *Selecionar*, dois cliques no estado (ou `F2`, ou `Enter` num estado já selecionado) abrem o campo de nome; `Enter` aplica e `Esc` cancela. Os nomes não podem se repetir nem ficar vazios.
-3. **Inicial e aceitação:** clique com o botão direito no estado (no teclado, tecla de menu ou `Shift+F10` com o estado em foco) para *Marcar como inicial*, *Alternar aceitação*, *Renomear* ou *Excluir*.
+3. **Inicial e aceitação:** clique com o botão direito no estado (no teclado, tecla de menu ou `Shift+F10` com o estado em foco) para *Marcar como inicial*, *Alternar aceitação*, *Renomear* ou *Excluir*. Na tela de toque, segure o dedo no estado. Enquanto houver estados, uma dica no topo do canvas lembra esse menu, e os avisos de estado inicial ou de aceitação ausente dizem onde marcá-los.
 4. **Transição:** escolha a ferramenta *Transição* (`T`), clique no estado de origem e depois no de destino (os dois iguais fazem um laço). Um diálogo pede os símbolos: separe por vírgula e escreva `eps` para ε. Cada símbolo tem um caractere. Com a ferramenta *Selecionar*, dois cliques no rótulo de uma aresta editam os símbolos.
 5. **Apagar:** ferramenta *Apagar* (`D`) e clique no estado ou na aresta, ou selecione e aperte `Delete`.
-6. **Simular:** aba *Simular*, digite a cadeia (ex.: `abba`) e aperte `Enter` ou *Simular*. Esc dentro do campo encerra a simulação. Editar o autômato também a encerra.
+6. **Simular:** aba *Simular*, digite a cadeia (ex.: `abba`) e aperte `Enter` ou *Simular*. Esc dentro do campo encerra a simulação. Editar o autômato também a encerra; arrastar um estado, não.
 
 ## Atalhos de teclado
 

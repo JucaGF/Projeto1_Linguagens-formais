@@ -14,6 +14,7 @@ import { useSimulationPlayback } from '@/hooks/useSimulationPlayback'
 import { analyze } from '@/lib/automaton/analysis'
 import { STATE_RADIUS } from '@/lib/automaton/geometry'
 import type { Automaton, Point, StateId, TransitionId } from '@/lib/automaton/types'
+import { cn } from '@/lib/utils'
 import { useEditor } from '@/store/editor'
 import { ArrowDefs } from './ArrowDefs'
 import { StateNode } from './StateNode'
@@ -193,22 +194,39 @@ export function AutomatonCanvas() {
         <Controls showInteractive={false} position="bottom-left" fitViewOptions={FIT_VIEW} />
         {pendingFrom !== null && <PendingLink from={pendingFrom} />}
       </ReactFlow>
-      <EmptyHint visible={automaton.states.length === 0} />
+      <CanvasHint visible={automaton.states.length === 0} className="inset-0 items-center">
+        Dê dois cliques no fundo para criar um estado
+      </CanvasHint>
+      <CanvasHint
+        visible={automaton.states.length > 0 && simulation === null}
+        className="inset-x-0 top-14 px-3"
+      >
+        Botão direito num estado: inicial, aceitação, renomear
+      </CanvasHint>
       <SymbolDialog />
     </div>
   )
 }
 
-function EmptyHint({ visible }: { visible: boolean }) {
+function CanvasHint({
+  visible,
+  className,
+  children,
+}: {
+  visible: boolean
+  className: string
+  children: string
+}) {
   return (
     <div
       aria-hidden={!visible}
-      className="pointer-events-none absolute inset-0 flex items-center justify-center transition-opacity duration-200 ease-(--ease-out)"
+      className={cn(
+        'pointer-events-none absolute flex justify-center text-center transition-opacity duration-200 ease-(--ease-out)',
+        className,
+      )}
       style={{ opacity: visible ? 1 : 0 }}
     >
-      <p className="text-sm text-muted-foreground">
-        Dê dois cliques no fundo para criar um estado
-      </p>
+      <p className="text-sm text-muted-foreground">{children}</p>
     </div>
   )
 }

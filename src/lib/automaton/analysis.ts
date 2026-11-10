@@ -89,6 +89,9 @@ function findUnreachable(a: Automaton, initial: StateId | null): State[] {
   return a.states.filter((s) => !seen.has(s.id))
 }
 
+/** Inicial e aceitação só se marcam pelo menu de contexto do estado; o aviso diz onde. */
+const ROLE_HINT = 'clique com o botão direito num estado'
+
 export function analyze(a: Automaton): Analysis {
   const alphabet = alphabetOf(a)
   const moves = indexMoves(a)
@@ -100,8 +103,8 @@ export function analyze(a: Automaton): Analysis {
   const unreachable = findUnreachable(a, initial)
 
   const warnings: string[] = []
-  if (initial === null) warnings.push('Nenhum estado inicial')
-  if (accepting.length === 0) warnings.push('Nenhum estado de aceitação')
+  if (initial === null) warnings.push(`Nenhum estado inicial — ${ROLE_HINT}`)
+  if (accepting.length === 0) warnings.push(`Nenhum estado de aceitação — ${ROLE_HINT}`)
   for (const state of unreachable) warnings.push(`Estado inalcançável: ${state.label}`)
   if (missing.length === 1) warnings.push('AFD incompleto: falta 1 transição')
   else if (missing.length > 1) warnings.push(`AFD incompleto: faltam ${missing.length} transições`)

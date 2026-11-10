@@ -65,7 +65,10 @@ describe('analyze', () => {
       { stateId: 'q1', symbol: 'a' },
       { stateId: 'q1', symbol: 'b' },
     ])
-    expect(result.warnings).toEqual(['Nenhum estado de aceitação', 'AFD incompleto: faltam 2 transições'])
+    expect(result.warnings).toEqual([
+      'Nenhum estado de aceitação — clique com o botão direito num estado',
+      'AFD incompleto: faltam 2 transições',
+    ])
   })
 
   it('AFD com uma única transição faltando avisa no singular', () => {
@@ -134,7 +137,7 @@ describe('analyze', () => {
     const result = analyze(a)
     expect(result.initial).toBeNull()
     expect(result.unreachable).toEqual([])
-    expect(result.warnings[0]).toBe('Nenhum estado inicial')
+    expect(result.warnings[0]).toBe('Nenhum estado inicial — clique com o botão direito num estado')
   })
 
   it('avisos saem na ordem: inicial, aceitação, inalcançáveis, AFD incompleto', () => {
@@ -145,7 +148,10 @@ describe('analyze', () => {
         ['q1', 'a', 'q0'],
       ],
     })
-    expect(analyze(noInitial).warnings).toEqual(['Nenhum estado inicial', 'Nenhum estado de aceitação'])
+    expect(analyze(noInitial).warnings).toEqual([
+      'Nenhum estado inicial — clique com o botão direito num estado',
+      'Nenhum estado de aceitação — clique com o botão direito num estado',
+    ])
 
     const rest = build({
       states: ['q0', 'q1', 'q2'],
@@ -153,7 +159,7 @@ describe('analyze', () => {
       transitions: [['q0', 'a', 'q1']],
     })
     expect(analyze(rest).warnings).toEqual([
-      'Nenhum estado de aceitação',
+      'Nenhum estado de aceitação — clique com o botão direito num estado',
       'Estado inalcançável: q2',
       'AFD incompleto: faltam 2 transições',
     ])
