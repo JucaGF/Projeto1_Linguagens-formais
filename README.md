@@ -52,7 +52,7 @@ As dicas do dock (passe o mouse sobre um botão) mostram a tecla de cada ferrame
 
 ## Formatos JSON
 
-Na aba *JSON* dá para alternar entre os dois formatos, copiar, baixar e importar. O botão *Exportar → JSON* do dock baixa o formato do professor.
+Na aba *JSON* dá para alternar entre os dois formatos, copiar, baixar e importar. O menu *Exportar* do dock também baixa os dois: *JSON (formato do professor)* gera `automato.json` e *JSON completo* gera `automato-completo.json`.
 
 ### Formato do professor
 

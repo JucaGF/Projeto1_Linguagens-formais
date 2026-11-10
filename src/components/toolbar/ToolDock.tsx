@@ -7,6 +7,7 @@ import {
   EllipsisIcon,
   EraserIcon,
   FileImageIcon,
+  FileJsonIcon,
   ImageIcon,
   LibraryBigIcon,
   LinkIcon,
@@ -60,7 +61,7 @@ import { EXAMPLES, type Example } from '@/examples'
 import { redo, TOOL_KEYS, undo } from '@/hooks/useKeyboardShortcuts'
 import { useShareLink } from '@/hooks/useShareLink'
 import { emptyAutomaton } from '@/lib/automaton/operations'
-import { toProfessorJson } from '@/lib/automaton/serialize'
+import { toExtendedJson, toProfessorJson } from '@/lib/automaton/serialize'
 import { toSvg } from '@/lib/automaton/svg'
 import type { Automaton } from '@/lib/automaton/types'
 import { downloadFile, svgToPngBlob } from '@/lib/export/download'
@@ -106,11 +107,22 @@ const EXPORTS: ExportFormat[] = [
     save: async (a) => downloadFile('automato.png', await svgToPngBlob(toSvg(a), 2), 'image/png'),
   },
   {
-    label: 'JSON',
+    label: 'JSON (formato do professor)',
     file: 'automato.json',
     icon: BracesIcon,
     save: (a) =>
       downloadFile('automato.json', JSON.stringify(toProfessorJson(a), null, 2), 'application/json'),
+  },
+  {
+    label: 'JSON completo',
+    file: 'automato-completo.json',
+    icon: FileJsonIcon,
+    save: (a) =>
+      downloadFile(
+        'automato-completo.json',
+        JSON.stringify(toExtendedJson(a), null, 2),
+        'application/json',
+      ),
   },
 ]
 
