@@ -1,6 +1,17 @@
 import { mergeSymbols } from './symbols'
 import type { Automaton, Point, State, StateId, TransitionId } from './types'
 
+let fallbackCount = 0
+
+/** `crypto.randomUUID` só existe em contexto seguro (HTTPS ou localhost); fora dele, um id local basta. */
+function newId(): string {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID()
+  }
+  fallbackCount++
+  return `id-${Date.now().toString(36)}-${fallbackCount.toString(36)}-${Math.random().toString(36).slice(2, 10)}`
+}
+
 const hasState = (a: Automaton, id: StateId) => a.states.some((s) => s.id === id)
 
 const hasTransition = (a: Automaton, id: TransitionId) => a.transitions.some((t) => t.id === id)
@@ -21,7 +32,7 @@ export function emptyAutomaton(): Automaton {
 
 export function addState(a: Automaton, at: Point): { automaton: Automaton; state: State } {
   const state: State = {
-    id: crypto.randomUUID(),
+    id: newId(),
     label: freeLabel(a),
     x: at.x,
     y: at.y,
@@ -75,7 +86,7 @@ export function addTransition(
   if (symbols.length === 0 || !hasState(a, from) || !hasState(a, to)) return a
   const existing = a.transitions.find((t) => t.from === from && t.to === to)
   if (!existing) {
-    const transition = { id: crypto.randomUUID(), from, to, symbols: mergeSymbols(symbols) }
+    const transition = { id: newId(), from, to, symbols: mergeSymbols(symbols) }
     return { ...a, transitions: [...a.transitions, transition] }
   }
   return setTransitionSymbols(a, existing.id, mergeSymbols(existing.symbols, symbols))

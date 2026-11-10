@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
   addState,
   addTransition,
@@ -64,6 +64,21 @@ describe('addState', () => {
     const { automaton, state } = addState(removeState(a, ids[0]), at)
     expect(state.isInitial).toBe(false)
     expect(automaton.states.some((s) => s.isInitial)).toBe(false)
+  })
+})
+
+describe('ids fora de contexto seguro', () => {
+  afterEach(() => vi.unstubAllGlobals())
+
+  it('sem crypto.randomUUID os estados e transições ainda ganham ids distintos', () => {
+    vi.stubGlobal('crypto', {})
+    const { a, ids } = withStates(3)
+    expect(new Set(ids).size).toBe(3)
+    expect(ids.every((id) => id.length > 0)).toBe(true)
+
+    const linked = addTransition(addTransition(a, ids[0], ids[1], ['a']), ids[1], ids[2], ['b'])
+    const transitionIds = linked.transitions.map((t) => t.id)
+    expect(new Set(transitionIds).size).toBe(2)
   })
 })
 
