@@ -1,4 +1,4 @@
-import type { Point } from './types'
+import type { Automaton, Point, Transition } from './types'
 
 export const STATE_RADIUS = 28
 export const CURVE_OFFSET = 40
@@ -20,6 +20,16 @@ export function circleLayout(count: number, index: number): Point {
     x: Math.round(LAYOUT_CENTER.x + LAYOUT_RADIUS * Math.cos(angle)),
     y: Math.round(LAYOUT_CENTER.y + LAYOUT_RADIUS * Math.sin(angle)),
   }
+}
+
+export type TransitionShape = 'loop' | 'curved' | 'straight'
+
+/** Laço quando `from === to`; curva quando existe a transição inversa, para o par não se sobrepor. */
+export function transitionShape(a: Automaton, t: Transition): TransitionShape {
+  if (t.from === t.to) return 'loop'
+  return a.transitions.some((other) => other.from === t.to && other.to === t.from)
+    ? 'curved'
+    : 'straight'
 }
 
 export interface EdgeGeometry {

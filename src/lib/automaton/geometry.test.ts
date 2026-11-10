@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { build } from './build'
 import {
   circleLayout,
   CURVE_OFFSET,
@@ -6,6 +7,7 @@ import {
   initialArrowPath,
   selfLoopGeometry,
   STATE_RADIUS,
+  transitionShape,
 } from './geometry'
 
 describe('circleLayout', () => {
@@ -107,5 +109,35 @@ describe('selfLoopGeometry', () => {
 describe('initialArrowPath', () => {
   it('é uma reta de 40 vinda da esquerda até a borda do círculo', () => {
     expect(initialArrowPath({ x: 100, y: 50 })).toBe('M 32 50 L 72 50')
+  })
+})
+
+describe('transitionShape', () => {
+  const shapes = (spec: Parameters<typeof build>[0]) => {
+    const a = build(spec)
+    return a.transitions.map((t) => `${t.from}>${t.to}:${transitionShape(a, t)}`)
+  }
+
+  it('é laço quando origem e destino coincidem', () => {
+    expect(shapes({ states: ['q0'], transitions: [['q0', 'a', 'q0']] })).toEqual(['q0>q0:loop'])
+  })
+
+  it('é reta quando não existe a transição inversa', () => {
+    expect(shapes({ states: ['q0', 'q1'], transitions: [['q0', 'a', 'q1']] })).toEqual([
+      'q0>q1:straight',
+    ])
+  })
+
+  it('curva as duas transições de um par de ida e volta', () => {
+    expect(
+      shapes({
+        states: ['q0', 'q1', 'q2'],
+        transitions: [
+          ['q0', 'a', 'q1'],
+          ['q1', 'b', 'q0'],
+          ['q1', 'a', 'q2'],
+        ],
+      }),
+    ).toEqual(['q0>q1:curved', 'q1>q0:curved', 'q1>q2:straight'])
   })
 })

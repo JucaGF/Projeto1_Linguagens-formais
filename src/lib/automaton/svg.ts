@@ -5,6 +5,7 @@ import {
   initialArrowPath,
   selfLoopGeometry,
   STATE_RADIUS,
+  transitionShape,
 } from './geometry'
 import { formatSymbols } from './symbols'
 import type { Automaton, State, Transition } from './types'
@@ -71,11 +72,10 @@ function boundingBox(states: State[]): Box {
   return { x: left, y: top, width: right - left, height: bottom - top }
 }
 
-/** Laço quando `from === to`; curva quando existe a transição inversa, para o par não se sobrepor. */
 function transitionGeometry(a: Automaton, t: Transition, from: State, to: State): EdgeGeometry {
-  if (t.from === t.to) return selfLoopGeometry(from)
-  const curved = a.transitions.some((other) => other.from === t.to && other.to === t.from)
-  return edgeGeometry(from, to, curved)
+  const shape = transitionShape(a, t)
+  if (shape === 'loop') return selfLoopGeometry(from)
+  return edgeGeometry(from, to, shape === 'curved')
 }
 
 /** SVG autônomo do autômato: fundo branco, fonte serifada e a mesma geometria da tela. */
