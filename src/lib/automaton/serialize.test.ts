@@ -33,6 +33,24 @@ function example(id: string): Automaton {
   return found.automaton
 }
 
+/** Coordenadas pseudoaleatórias fixas comprimem mal, então o link cresce com `count`. */
+function scatter(count: number): Automaton {
+  let seed = 12345
+  const next = () => {
+    seed = (seed * 1664525 + 1013904223) % 4294967296
+    return (seed / 4294967296) * 1000
+  }
+  const states = Array.from({ length: count }, (_, i) => ({
+    id: `s${i}`,
+    label: `q${i}`,
+    x: next(),
+    y: next(),
+    isInitial: i === 0,
+    isAccepting: false,
+  }))
+  return { states, transitions: [] }
+}
+
 function imported(text: string): Automaton {
   const result = parseAutomatonJson(text)
   if (!result.ok) throw new Error(`importação falhou: ${result.error}`)
@@ -102,6 +120,57 @@ describe('toProfessorJson', () => {
     expect(Object.keys(json)).toEqual(['__proto__'])
     expect(JSON.stringify(json)).toBe('{"__proto__":{"a":"__proto__"}}')
   })
+
+  describe('o estado inicial vem primeiro', () => {
+    const initialInMiddle = () =>
+      build({
+        states: ['q0', 'q1', 'q2'],
+        initial: 'q1',
+        transitions: [
+          ['q0', 'a', 'q1'],
+          ['q1', 'a', 'q2'],
+        ],
+      })
+
+    it('a primeira chave é o rótulo do inicial e os demais mantêm a ordem', () => {
+      expect(Object.keys(toProfessorJson(initialInMiddle()))).toEqual(['q1', 'q0', 'q2'])
+    })
+
+    it('reimportar o JSON devolve o mesmo estado como inicial', () => {
+      const json = toProfessorJson(initialInMiddle())
+      const reimported = imported(JSON.stringify(json))
+      expect(reimported.states.filter((s) => s.isInitial).map((s) => s.label)).toEqual(['q1'])
+      expect(toProfessorJson(reimported)).toEqual(json)
+    })
+
+    it('o inicial é identificado pelo estado, mesmo com rótulos diferentes dos ids', () => {
+      const a: Automaton = {
+        states: [
+          { id: 's1', label: 'fim', x: 0, y: 0, isInitial: false, isAccepting: true },
+          { id: 's2', label: 'início', x: 10, y: 0, isInitial: true, isAccepting: false },
+        ],
+        transitions: [{ id: 't1', from: 's2', to: 's1', symbols: ['a'] }],
+      }
+      expect(Object.keys(toProfessorJson(a))).toEqual(['início', 'fim'])
+    })
+
+    it('sem estado inicial, mantém a ordem dos estados', () => {
+      const a = build({ states: ['q0', 'q1'], transitions: [] })
+      const noInitial: Automaton = {
+        ...a,
+        states: a.states.map((s) => ({ ...s, isInitial: false })),
+      }
+      expect(Object.keys(toProfessorJson(noInitial))).toEqual(['q0', 'q1'])
+    })
+
+    it.each(EXAMPLES.map((e) => [e.id, e.automaton] as const))(
+      'a primeira chave é o inicial: %s',
+      (_id, automaton) => {
+        const initial = automaton.states.find((s) => s.isInitial)
+        expect(Object.keys(toProfessorJson(automaton))[0]).toBe(initial?.label)
+      },
+    )
+  })
 })
 
 describe('toExtendedJson', () => {
@@ -126,9 +195,20 @@ describe('parseAutomatonJson: formato estendido', () => {
     const a: Automaton = {
       states: [
         { id: 's-1', label: 'início', x: 12.5, y: -3, isInitial: true, isAccepting: true },
-        { id: 's-2', label: '', x: 0, y: 99, isInitial: false, isAccepting: false },
+        { id: 's-2', label: 'fim', x: 0, y: 99, isInitial: false, isAccepting: false },
       ],
       transitions: [{ id: 't1', from: 's-1', to: 's-2', symbols: ['a', 'ε'] }],
+    }
+    expect(parseAutomatonJson(JSON.stringify(toExtendedJson(a)))).toEqual({
+      ok: true,
+      automaton: a,
+    })
+  })
+
+  it('aceita um autômato sem estado inicial', () => {
+    const a: Automaton = {
+      states: PDF_EXAMPLE.states.map((s) => ({ ...s, isInitial: false })),
+      transitions: PDF_EXAMPLE.transitions,
     }
     expect(parseAutomatonJson(JSON.stringify(toExtendedJson(a)))).toEqual({
       ok: true,
@@ -170,6 +250,13 @@ describe('parseAutomatonJson: formato estendido', () => {
       ['id do estado numérico', (d) => void (d.automaton.states[0].id = 1)],
       ['id do estado vazio', (d) => void (d.automaton.states[0].id = '')],
       ['rótulo numérico', (d) => void (d.automaton.states[0].label = 1)],
+      ['rótulo vazio', (d) => void (d.automaton.states[0].label = '')],
+      ['rótulo só com espaços', (d) => void (d.automaton.states[0].label = '  ')],
+      [
+        'rótulos repetidos',
+        (d) => void (d.automaton.states[1].label = d.automaton.states[0].label),
+      ],
+      ['mais de um estado inicial', (d) => void (d.automaton.states[1].isInitial = true)],
       ['x como string', (d) => void (d.automaton.states[0].x = '10')],
       ['x nulo (era Infinity)', (d) => void (d.automaton.states[0].x = null)],
       ['y ausente', (d) => void delete d.automaton.states[0].y],
@@ -180,6 +267,7 @@ describe('parseAutomatonJson: formato estendido', () => {
         (d) => void (d.automaton.states[1].id = d.automaton.states[0].id),
       ],
       ['id da transição numérico', (d) => void (d.automaton.transitions[0].id = 1)],
+      ['id da transição vazio', (d) => void (d.automaton.transitions[0].id = '')],
       ['from numérico', (d) => void (d.automaton.transitions[0].from = 0)],
       ['to ausente', (d) => void delete d.automaton.transitions[0].to],
       ['symbols não é lista', (d) => void (d.automaton.transitions[0].symbols = 'a')],
@@ -397,6 +485,32 @@ describe('link compartilhável', () => {
     const doc = draft()
     doc.automaton.transitions[0].to = 'q9'
     expect(decodeShare(compressToEncodedURIComponent(JSON.stringify(doc)))).toBeNull()
+  })
+
+  it('devolve null quando há dois estados iniciais ou rótulos repetidos', () => {
+    const twoInitials = draft()
+    twoInitials.automaton.states[1].isInitial = true
+    expect(decodeShare(compressToEncodedURIComponent(JSON.stringify(twoInitials)))).toBeNull()
+
+    const sameLabel = draft()
+    sameLabel.automaton.states[1].label = sameLabel.automaton.states[0].label
+    expect(decodeShare(compressToEncodedURIComponent(JSON.stringify(sameLabel)))).toBeNull()
+  })
+
+  describe('tamanho do link', () => {
+    it('aceita um autômato grande abaixo do limite', () => {
+      const big = scatter(3000)
+      const encoded = encodeShare(big)
+      expect(encoded.length).toBeGreaterThan(100_000)
+      expect(encoded.length).toBeLessThanOrEqual(200_000)
+      expect(decodeShare(encoded)).toEqual(big)
+    })
+
+    it('recusa um link com mais de 200 mil caracteres, mesmo que seja válido', () => {
+      const encoded = encodeShare(scatter(7000))
+      expect(encoded.length).toBeGreaterThan(200_000)
+      expect(decodeShare(encoded)).toBeNull()
+    })
   })
 
   it('só aceita o formato estendido, não o do professor', () => {

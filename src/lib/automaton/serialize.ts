@@ -17,6 +17,9 @@ export interface ExtendedJson {
 
 export type ParseResult = { ok: true; automaton: Automaton } | { ok: false; error: string }
 
+/** Um link é entrada não confiável: limita o texto antes de descomprimi-lo. */
+const MAX_SHARE_LENGTH = 200_000
+
 const INVALID_JSON = 'JSON inválido'
 const UNRECOGNIZED = 'Formato não reconhecido'
 const missingState = (id: string) => `Transição para estado inexistente: "${id}"`
@@ -29,7 +32,11 @@ export function toProfessorJson(a: Automaton): ProfessorJson {
   const label = (id: StateId): string => labelOf.get(id) ?? id
   const asLists = analyze(a).kind === 'NFA'
 
-  const rows = new Map<string, Map<string, string[]>>(a.states.map((s) => [s.label, new Map()]))
+  // A importação trata a primeira chave como inicial. Limite do formato: objetos JS ordenam
+  // chaves inteiras ("0", "1") antes das demais, então um inicial com nome inteiro não é garantido.
+  const initial = a.states.find((s) => s.isInitial)
+  const ordered = initial ? [initial, ...a.states.filter((s) => s !== initial)] : a.states
+  const rows = new Map<string, Map<string, string[]>>(ordered.map((s) => [s.label, new Map()]))
   for (const t of a.transitions) {
     const row = rows.get(label(t.from))
     if (!row) continue
@@ -69,6 +76,7 @@ export function encodeShare(a: Automaton): string {
 }
 
 export function decodeShare(s: string): Automaton | null {
+  if (s.length > MAX_SHARE_LENGTH) return null
   try {
     const text = decompressFromEncodedURIComponent(s)
     if (!text) return null
@@ -150,7 +158,7 @@ function parseState(raw: unknown): State | null {
   if (!isRecord(raw)) return null
   const { id, label, x, y, isInitial, isAccepting } = raw
   if (typeof id !== 'string' || id === '') return null
-  if (typeof label !== 'string') return null
+  if (typeof label !== 'string' || label.trim() === '') return null
   if (!isFiniteNumber(x) || !isFiniteNumber(y)) return null
   if (typeof isInitial !== 'boolean' || typeof isAccepting !== 'boolean') return null
   return { id, label, x, y, isInitial, isAccepting }
@@ -163,10 +171,17 @@ function parseExtended(root: Record<string, unknown>): ParseResult {
 
   const states: State[] = []
   const stateIds = new Set<StateId>()
+  const labels = new Set<string>()
+  let hasInitial = false
   for (const raw of rawStates) {
     const state = parseState(raw)
-    if (state === null || stateIds.has(state.id)) return fail(UNRECOGNIZED)
+    if (state === null || stateIds.has(state.id) || labels.has(state.label)) {
+      return fail(UNRECOGNIZED)
+    }
+    if (state.isInitial && hasInitial) return fail(UNRECOGNIZED)
+    hasInitial ||= state.isInitial
     stateIds.add(state.id)
+    labels.add(state.label)
     states.push(state)
   }
 
@@ -175,7 +190,7 @@ function parseExtended(root: Record<string, unknown>): ParseResult {
   for (const raw of rawTransitions) {
     if (!isRecord(raw)) return fail(UNRECOGNIZED)
     const { id, from, to, symbols: rawSymbols } = raw
-    if (typeof id !== 'string' || typeof from !== 'string' || typeof to !== 'string') {
+    if (typeof id !== 'string' || id === '' || typeof from !== 'string' || typeof to !== 'string') {
       return fail(UNRECOGNIZED)
     }
     if (!isStringArray(rawSymbols) || rawSymbols.length === 0 || transitionIds.has(id)) {
