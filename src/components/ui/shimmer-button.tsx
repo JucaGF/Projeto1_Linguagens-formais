@@ -7,6 +7,8 @@ export interface ShimmerButtonProps extends ComponentPropsWithoutRef<"button"> {
   shimmerSize?: string
   borderRadius?: string
   shimmerDuration?: string
+  /** Desliga o brilho que gira em volta do botão. */
+  shimmer?: boolean
   background?: string
   className?: string
   children?: React.ReactNode
@@ -23,6 +25,7 @@ export const ShimmerButton = React.forwardRef<
       shimmerDuration = "3s",
       borderRadius = "100px",
       background = "rgba(0, 0, 0, 1)",
+      shimmer = true,
       className,
       children,
       ...props
@@ -50,18 +53,20 @@ export const ShimmerButton = React.forwardRef<
         {...props}
       >
         {/* spark container */}
-        <div
-          className={cn(
-            "-z-30 blur-[2px] motion-reduce:hidden",
-            "@container-[size] absolute inset-0 overflow-visible"
-          )}
-        >
-          {/* spark */}
-          <div className="animate-shimmer-slide absolute inset-0 aspect-[1] h-[100cqh] rounded-none [mask:none]">
-            {/* spark before */}
-            <div className="animate-spin-around absolute -inset-full w-auto [translate:0_0] rotate-0 [background:conic-gradient(from_calc(270deg-(var(--spread)*0.5)),transparent_0,var(--shimmer-color)_var(--spread),transparent_var(--spread))]" />
+        {shimmer && (
+          <div
+            className={cn(
+              "-z-30 blur-[2px] motion-reduce:hidden",
+              "@container-[size] absolute inset-0 overflow-visible"
+            )}
+          >
+            {/* spark */}
+            <div className="animate-shimmer-slide absolute inset-0 aspect-[1] h-[100cqh] rounded-none [mask:none]">
+              {/* spark before */}
+              <div className="animate-spin-around absolute -inset-full w-auto [translate:0_0] rotate-0 [background:conic-gradient(from_calc(270deg-(var(--spread)*0.5)),transparent_0,var(--shimmer-color)_var(--spread),transparent_var(--spread))]" />
+            </div>
           </div>
-        </div>
+        )}
         {children}
 
         {/* Highlight */}

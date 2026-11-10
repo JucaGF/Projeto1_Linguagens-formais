@@ -18,11 +18,13 @@ import { Input } from '@/components/ui/input'
 import { ShimmerButton } from '@/components/ui/shimmer-button'
 import type { SimStep, SimTrace } from '@/lib/automaton/simulate'
 import type { StateId } from '@/lib/automaton/types'
-import { useEditor } from '@/store/editor'
+import { type SimulationState, useEditor } from '@/store/editor'
 import { copiesText, tapeCells } from './simulation'
 
 const CONFETTI_GLOBAL = { resize: true, useWorker: true, disableForReducedMotion: true }
-const SHAKE = { x: [0, -8, 8, -6, 6, 0] }
+const SHAKE = {
+  transform: [0, -8, 8, -6, 6, 0].map((x) => `translateX(${x}px)`),
+}
 
 /**
  * Rodadas cujo resultado já foi revelado. O confete e o tremor tocam uma vez por rodada: voltar
@@ -45,17 +47,19 @@ export function SimulationPanel() {
 
   const celebrate = useCallback((from: HTMLElement) => {
     const box = from.getBoundingClientRect()
-    void confetti.current?.fire({
-      origin: {
-        x: (box.left + box.width / 2) / window.innerWidth,
-        y: (box.top + box.height / 2) / window.innerHeight,
-      },
-      particleCount: 90,
-      spread: 75,
-      startVelocity: 32,
-      ticks: 160,
-      scalar: 0.9,
-    })
+    return (
+      confetti.current?.fire({
+        origin: {
+          x: (box.left + box.width / 2) / window.innerWidth,
+          y: (box.top + box.height / 2) / window.innerHeight,
+        },
+        particleCount: 90,
+        spread: 75,
+        startVelocity: 32,
+        ticks: 160,
+        scalar: 0.9,
+      }) ?? false
+    )
   }, [])
 
   return (
@@ -85,6 +89,7 @@ export function SimulationPanel() {
             className="h-9 shrink-0 px-4 text-sm font-medium"
             borderRadius="8px"
             shimmerDuration="2.5s"
+            shimmer={!simulation}
           >
             Simular
           </ShimmerButton>
@@ -93,6 +98,18 @@ export function SimulationPanel() {
           Deixe vazio para testar a cadeia vazia (ε).
         </p>
       </form>
+
+      {/* antes da rodada: o efeito que cria o canvas do confete roda antes do efeito do resultado */}
+      {createPortal(
+        <Confetti
+          ref={confetti}
+          manualstart
+          globalOptions={CONFETTI_GLOBAL}
+          className="pointer-events-none fixed inset-0 z-50 size-full"
+          aria-hidden
+        />,
+        document.body,
+      )}
 
       {simulation?.trace.error === 'no-initial' ? (
         <p
@@ -107,18 +124,17 @@ export function SimulationPanel() {
         <Run trace={simulation.trace} step={simulation.step} playing={simulation.playing} onAccept={celebrate} />
       ) : null}
 
-      {createPortal(
-        <Confetti
-          ref={confetti}
-          manualstart
-          globalOptions={CONFETTI_GLOBAL}
-          className="pointer-events-none fixed inset-0 z-50 size-full"
-          aria-hidden
-        />,
-        document.body,
-      )}
+      <p aria-live="polite" className="sr-only" data-testid="sim-announce">
+        {announcement(simulation)}
+      </p>
     </div>
   )
+}
+
+function announcement(simulation: SimulationState | null) {
+  if (!simulation || simulation.trace.error) return ''
+  if (simulation.step < simulation.trace.steps.length - 1) return ''
+  return simulation.trace.accepted ? 'Cadeia aceita' : 'Cadeia rejeitada'
 }
 
 function Run({
@@ -130,7 +146,7 @@ function Run({
   trace: SimTrace
   step: number
   playing: boolean
-  onAccept: (from: HTMLElement) => void
+  onAccept: (from: HTMLElement) => boolean
 }) {
   const states = useEditor((s) => s.automaton.states)
   const label = (id: StateId) => states.find((s) => s.id === id)?.label ?? id
@@ -185,10 +201,10 @@ function Tape({ input, consumed }: { input: string; consumed: number }) {
   // a célula lida fica à vista sem rolagem animada: o passo pode vir do teclado
   useLayoutEffect(() => {
     const list = strip.current
-    const cell = list?.children[head] as HTMLElement | undefined
-    if (!list || !cell) return
-    list.scrollLeft = cell.offsetLeft - list.clientWidth / 2 + cell.offsetWidth / 2
-  }, [head])
+    if (!list) return
+    const cell = head < 0 ? undefined : (list.children[head] as HTMLElement | undefined)
+    list.scrollLeft = cell ? cell.offsetLeft - list.clientWidth / 2 + cell.offsetWidth / 2 : 0
+  }, [head, input])
 
   return (
     <ol
@@ -263,8 +279,16 @@ function ControlButton({
   onClick: () => void
   children: ReactNode
 }) {
+  // aria-disabled em vez de disabled: o botão desativado no limite continua com o foco do teclado
   return (
-    <Button variant="ghost" size="icon-sm" aria-label={label} disabled={disabled} onClick={onClick}>
+    <Button
+      variant="ghost"
+      size="icon-sm"
+      aria-label={label}
+      aria-disabled={disabled}
+      onClick={disabled ? undefined : onClick}
+      className="aria-disabled:pointer-events-none aria-disabled:opacity-50"
+    >
       {children}
     </Button>
   )
@@ -311,16 +335,23 @@ function Copies({ step, label }: { step: SimStep; label: (id: StateId) => string
   )
 }
 
-function Result({ trace, onAccept }: { trace: SimTrace; onAccept: (from: HTMLElement) => void }) {
+function Result({ trace, onAccept }: { trace: SimTrace; onAccept: (from: HTMLElement) => boolean }) {
   const [scope, animate] = useAnimate<HTMLParagraphElement>()
   const reduceMotion = useReducedMotion()
 
   useEffect(() => {
     if (revealed.has(trace)) return
-    if (trace.accepted || reduceMotion) {
+    if (reduceMotion) {
       revealed.add(trace)
-      if (trace.accepted && !reduceMotion) onAccept(scope.current)
       return
+    }
+    if (trace.accepted) {
+      // um quadro depois: ao reabrir a aba, o StrictMode reinicia o canvas recém-montado do confete
+      const from = scope.current
+      const frame = requestAnimationFrame(() => {
+        if (onAccept(from)) revealed.add(trace)
+      })
+      return () => cancelAnimationFrame(frame)
     }
     // um tremor interrompido (desmontagem, StrictMode) não conta como revelado e toca de novo
     let interrupted = false
@@ -335,7 +366,7 @@ function Result({ trace, onAccept }: { trace: SimTrace; onAccept: (from: HTMLEle
   }, [trace, reduceMotion, onAccept, animate, scope])
 
   return (
-    <div role="status" className="flex flex-col items-start gap-1.5">
+    <div className="flex flex-col items-start gap-1.5">
       <p
         ref={scope}
         data-testid="sim-result"
