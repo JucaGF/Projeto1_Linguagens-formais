@@ -93,8 +93,11 @@
     --canvas-conflict: oklch(0.7 0.18 50);
     --canvas-active: oklch(0.8 0.16 78);
     --canvas-active-fill: oklch(0.97 0.05 90);
+    --canvas-active-stroke: oklch(0.55 0.13 70);
+    --canvas-firing: oklch(0.62 0.14 70);
     --canvas-died: oklch(0.6 0.22 27);
     --canvas-delete: oklch(0.58 0.21 27);
+    --canvas-delete-fill: oklch(0.97 0.02 27);
 }
 
 .dark {
@@ -160,7 +163,7 @@
   width: 30px;
   height: 30px;
   border-bottom-color: var(--border);
-  transition: background-color 150ms ease;
+  transition: background-color 150ms ease, transform 120ms var(--ease-out);
 }
 
 .automaton-canvas .react-flow__controls-button:active {
@@ -199,10 +202,11 @@
 
 .react-flow__node:not(.dragging) .state-node:active {
   scale: 0.97;
+  transition-duration: 180ms, 140ms;
 }
 
 .state-node[data-active='true'] {
-  --state-stroke: oklch(0.55 0.13 70);
+  --state-stroke: var(--canvas-active-stroke);
   --state-fill: var(--canvas-active-fill);
 }
 
@@ -243,13 +247,6 @@
 .state-node[data-pending='true'] .state-halo {
   opacity: 1;
   stroke-dasharray: 5 4;
-  animation: marching-ants 900ms linear infinite;
-}
-
-@keyframes marching-ants {
-  to {
-    stroke-dashoffset: -18;
-  }
 }
 
 .state-node .state-initial {
@@ -281,7 +278,7 @@
   border: 1px solid var(--canvas-selection);
   border-radius: 6px;
   outline: none;
-  box-shadow: 0 0 0 3px oklch(0.55 0.2 262 / 18%);
+  box-shadow: 0 0 0 3px color-mix(in oklch, var(--canvas-selection) 18%, transparent);
   pointer-events: all;
 }
 
@@ -295,7 +292,7 @@
 
   .automaton-canvas[data-tool='delete'] .react-flow__node:hover .state-circle {
     stroke: var(--canvas-delete);
-    fill: oklch(0.97 0.02 27);
+    fill: var(--canvas-delete-fill);
   }
 }
 
@@ -349,7 +346,7 @@
 }
 
 .edge-tone[data-tone='firing'] {
-  --edge-color: oklch(0.62 0.14 70);
+  --edge-color: var(--canvas-firing);
 }
 
 @media (hover: hover) and (pointer: fine) {
@@ -371,14 +368,10 @@
     }
   }
 
-  .state-node:active,
+  .react-flow__node:not(.dragging) .state-node:active,
   .edge-label:active .edge-label-text,
   .automaton-canvas .react-flow__controls-button:active {
     scale: 1;
     transform: none;
-  }
-
-  .state-node[data-pending='true'] .state-halo {
-    animation: none;
   }
 }

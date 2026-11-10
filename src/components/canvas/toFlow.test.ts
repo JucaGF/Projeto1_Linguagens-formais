@@ -45,7 +45,7 @@ describe('toFlowNodes', () => {
     ])
   })
 
-  it('marca seleção, origem pendente e os destaques da simulação', () => {
+  it('marca seleção, origem pendente e os destaques da simulação, com o stepKey', () => {
     const nodes = toFlowNodes(
       PDF_EXAMPLE,
       context({
@@ -53,12 +53,14 @@ describe('toFlowNodes', () => {
         pendingFrom: 'q0',
         active: new Set(['q1']),
         died: new Set(['q0']),
+        stepKey: 3,
       }),
     )
     const flags = Object.fromEntries(
       nodes.map((n) => [n.id, [n.data.selected, n.data.pending, n.data.active, n.data.died]]),
     )
     expect(flags).toEqual({ q0: [false, true, false, true], q1: [true, false, true, false] })
+    expect(nodes.every((n) => n.data.stepKey === 3)).toBe(true)
   })
 
   it('não marca um estado quando a seleção é uma transição de mesmo id', () => {

@@ -45,6 +45,8 @@ export interface EditorState {
   /** Devolve a mensagem de erro (e mantém o diálogo aberto), ou `null` se a transição foi criada. */
   confirmTransition(input: string): string | null
   cancelTransition(): void
+  /** Esquece a origem escolhida no primeiro clique do modo transição. */
+  cancelPending(): void
   loadAutomaton(a: Automaton): void
   startSimulation(input: string): void
   stepTo(n: number): void
@@ -57,6 +59,8 @@ function selectionExists(automaton: Automaton, selection: Selection): boolean {
   const items = selection.kind === 'state' ? automaton.states : automaton.transitions
   return items.some((item) => item.id === selection.id)
 }
+
+const hasState = (automaton: Automaton, id: StateId) => automaton.states.some((s) => s.id === id)
 
 const sameAutomaton = (a: Automaton, b: Automaton) =>
   a === b || JSON.stringify(a) === JSON.stringify(b)
@@ -164,6 +168,7 @@ export const useEditor = create<EditorState>()(
           return null
         },
         cancelTransition: () => set({ pendingTransition: null }),
+        cancelPending: () => set({ pendingFrom: null }),
 
         loadAutomaton: (a) => {
           set({ selection: null })
@@ -193,14 +198,26 @@ export const useEditor = create<EditorState>()(
 )
 
 /**
- * Toda mudança do autômato descarta a simulação e a origem pendente, e a seleção que sumiu.
- * A regra fica numa assinatura, e não nas ações, porque desfazer e refazer do zundo trocam o
- * autômato por fora delas.
+ * Toda mudança do autômato descarta a simulação e a origem pendente, e a seleção e a transição
+ * em diálogo cujos estados sumiram. A regra fica numa assinatura, e não nas ações, porque
+ * desfazer e refazer do zundo trocam o autômato por fora delas.
  */
 useEditor.subscribe((state, previous) => {
   if (state.automaton === previous.automaton) return
-  const selection = selectionExists(state.automaton, state.selection) ? state.selection : null
-  if (state.simulation !== null || state.pendingFrom !== null || selection !== state.selection) {
-    useEditor.setState({ simulation: null, pendingFrom: null, selection })
+  const { automaton, pendingTransition } = state
+  const selection = selectionExists(automaton, state.selection) ? state.selection : null
+  const dialog =
+    pendingTransition !== null &&
+    hasState(automaton, pendingTransition.from) &&
+    hasState(automaton, pendingTransition.to)
+      ? pendingTransition
+      : null
+  if (
+    state.simulation !== null ||
+    state.pendingFrom !== null ||
+    selection !== state.selection ||
+    dialog !== pendingTransition
+  ) {
+    useEditor.setState({ simulation: null, pendingFrom: null, selection, pendingTransition: dialog })
   }
 })

@@ -126,6 +126,32 @@ describe('transição em dois cliques', () => {
     expect(editor().automaton.transitions).toEqual([])
   })
 
+  it('cancelPending esquece a origem sem trocar de ferramenta', () => {
+    const [q0] = addTwoStates()
+    editor().setTool('add-transition')
+    editor().clickState(q0)
+    editor().cancelPending()
+    expect(editor().pendingFrom).toBeNull()
+    expect(editor().tool).toBe('add-transition')
+  })
+
+  it('desfazer a criação de um estado do diálogo fecha o diálogo', () => {
+    const [q0, q1] = addTwoStates()
+    pendingTransitionBetween(q0, q1)
+    history().undo()
+    expect(editor().automaton.states.map((s) => s.id)).toEqual([q0])
+    expect(editor().pendingTransition).toBeNull()
+    expect(editor().confirmTransition('a')).toBeNull()
+    expect(editor().automaton.transitions).toEqual([])
+  })
+
+  it('editar sem remover os estados do diálogo o mantém aberto', () => {
+    const [q0, q1] = addTwoStates()
+    pendingTransitionBetween(q0, q1)
+    editor().toggleAccepting(q1)
+    expect(editor().pendingTransition).toEqual({ from: q0, to: q1 })
+  })
+
   it('trocar de ferramenta descarta a origem pendente', () => {
     const [q0] = addTwoStates()
     editor().setTool('add-transition')

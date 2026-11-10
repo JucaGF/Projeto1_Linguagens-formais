@@ -12,14 +12,14 @@ import {
 } from '@/components/ui/context-menu'
 import { initialArrowPath, STATE_RADIUS } from '@/lib/automaton/geometry'
 import { useEditor } from '@/store/editor'
-import { arrowUrl } from './ArrowDefs'
+import { arrowUrl } from './markers'
 import { InlineInput } from './InlineInput'
 import type { StateFlowNode } from './toFlow'
 
 const CENTER = { x: STATE_RADIUS, y: STATE_RADIUS }
 const ACCEPTING_RING_INSET = 5
 const HALO_GAP = 5
-const DIED_PULSE_RADIUS = STATE_RADIUS + 14
+const DIED_PULSE_SCALE = 1.5
 
 /** Handle de tamanho zero no centro: o React Flow passa o centro do estado para as arestas. */
 const CENTER_HANDLE: CSSProperties = {
@@ -43,6 +43,9 @@ const RENAME_INPUT: CSSProperties = {
   fontSize: 16,
 }
 
+const PULSE_EASE = [0.23, 1, 0.32, 1] as const
+const PULSE_ORIGIN: CSSProperties = { transformBox: 'fill-box', transformOrigin: 'center' }
+
 function DiedPulse() {
   const reduceMotion = useReducedMotion()
   if (reduceMotion) {
@@ -54,7 +57,7 @@ function DiedPulse() {
         fill="var(--canvas-died)"
         initial={{ opacity: 0.35 }}
         animate={{ opacity: 0 }}
-        transition={{ duration: 0.4, ease: [0.23, 1, 0.32, 1] }}
+        transition={{ duration: 0.3, ease: PULSE_EASE }}
       />
     )
   }
@@ -62,12 +65,15 @@ function DiedPulse() {
     <motion.circle
       cx={CENTER.x}
       cy={CENTER.y}
+      r={STATE_RADIUS}
       fill="none"
       stroke="var(--canvas-died)"
       strokeWidth={2.5}
-      initial={{ r: STATE_RADIUS, opacity: 0.9 }}
-      animate={{ r: DIED_PULSE_RADIUS, opacity: 0 }}
-      transition={{ duration: 0.45, ease: [0.23, 1, 0.32, 1] }}
+      vectorEffect="non-scaling-stroke"
+      style={PULSE_ORIGIN}
+      initial={{ scale: 1, opacity: 0.9 }}
+      animate={{ scale: DIED_PULSE_SCALE, opacity: 0 }}
+      transition={{ duration: 0.3, ease: PULSE_EASE }}
     />
   )
 }
@@ -118,7 +124,7 @@ export function StateNode({ id, data }: NodeProps<StateFlowNode>) {
                 r={STATE_RADIUS - ACCEPTING_RING_INSET}
               />
             )}
-            {data.died && <DiedPulse />}
+            {data.died && <DiedPulse key={data.stepKey} />}
           </svg>
           {renaming ? (
             <InlineInput
@@ -145,6 +151,7 @@ export function StateNode({ id, data }: NodeProps<StateFlowNode>) {
       >
         <ContextMenuCheckboxItem
           checked={data.isInitial}
+          disabled={data.isInitial}
           onSelect={() => useEditor.getState().setInitial(id)}
         >
           Marcar como inicial

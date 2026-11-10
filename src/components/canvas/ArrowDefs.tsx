@@ -1,20 +1,11 @@
-export type EdgeTone = 'default' | 'selected' | 'conflict' | 'firing'
-
-const MARKER_IDS: Record<EdgeTone, string> = {
-  default: 'arrow',
-  selected: 'arrow-selected',
-  conflict: 'arrow-conflict',
-  firing: 'arrow-firing',
-}
+import { type EdgeTone, MARKER_IDS } from './markers'
 
 const MARKER_COLORS: Record<EdgeTone, string> = {
   default: 'var(--canvas-edge)',
   selected: 'var(--canvas-selection)',
   conflict: 'var(--canvas-conflict)',
-  firing: 'oklch(0.62 0.14 70)',
+  firing: 'var(--canvas-firing)',
 }
-
-export const arrowUrl = (tone: EdgeTone) => `url(#${MARKER_IDS[tone]})`
 
 /**
  * Pontas de seta compartilhadas por arestas e pela seta de entrada. Uma por cor, porque a

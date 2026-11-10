@@ -21,6 +21,8 @@ export type StateNodeData = {
   pending: boolean
   active: boolean
   died: boolean
+  /** Muda a cada passo da simulação, para o pulso de `died` tocar de novo. */
+  stepKey: number
 }
 
 export type TransitionEdgeData = {
@@ -72,6 +74,7 @@ export function toFlowNodes(a: Automaton, ctx: FlowContext): StateFlowNode[] {
       pending: ctx.pendingFrom === s.id,
       active: ctx.active.has(s.id),
       died: ctx.died.has(s.id),
+      stepKey: ctx.stepKey,
     },
   }))
 }

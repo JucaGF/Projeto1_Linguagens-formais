@@ -3,8 +3,8 @@ import { useState } from 'react'
 import { edgeGeometry, selfLoopGeometry } from '@/lib/automaton/geometry'
 import { formatSymbols } from '@/lib/automaton/symbols'
 import { useEditor } from '@/store/editor'
-import { arrowUrl, type EdgeTone } from './ArrowDefs'
 import { InlineInput } from './InlineInput'
+import { arrowUrl, type EdgeTone } from './markers'
 import type { TransitionEdgeData, TransitionFlowEdge } from './toFlow'
 
 const INTERACTION_WIDTH = 16

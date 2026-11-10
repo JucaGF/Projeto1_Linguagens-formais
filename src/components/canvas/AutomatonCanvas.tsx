@@ -9,7 +9,7 @@ import {
   useReactFlow,
   ViewportPortal,
 } from '@xyflow/react'
-import { type MouseEvent, useEffect, useMemo, useState } from 'react'
+import { type MouseEvent, useEffect, useLayoutEffect, useMemo, useState } from 'react'
 import { analyze } from '@/lib/automaton/analysis'
 import { STATE_RADIUS } from '@/lib/automaton/geometry'
 import type { Point, StateId, TransitionId } from '@/lib/automaton/types'
@@ -104,7 +104,20 @@ export function AutomatonCanvas() {
 
   // posições ao vivo ficam locais durante o arrasto; o store só recebe a posição final
   const [nodes, setNodes, onNodesChange] = useNodesState(flowNodes)
-  useEffect(() => setNodes(flowNodes), [flowNodes, setNodes])
+  useLayoutEffect(
+    () =>
+      setNodes((current) => {
+        const live = new Map(current.map((n) => [n.id, n]))
+        return flowNodes.map((n) => {
+          const old = live.get(n.id)
+          if (old === undefined) return n
+          // o React Flow descarta medidas e handles de um nó que chega sem `measured`
+          const measured = { ...n, measured: old.measured }
+          return old.dragging ? { ...measured, position: old.position, dragging: true } : measured
+        })
+      }),
+    [flowNodes, setNodes],
+  )
 
   const flowPoint = (event: MouseEvent) =>
     roundPoint(screenToFlowPosition({ x: event.clientX, y: event.clientY }))
@@ -113,7 +126,7 @@ export function AutomatonCanvas() {
     const editor = useEditor.getState()
     if (editor.tool === 'add-state') return editor.addStateAt(flowPoint(event))
     editor.select(null)
-    if (editor.pendingFrom !== null) useEditor.setState({ pendingFrom: null })
+    editor.cancelPending()
   }
 
   const onDoubleClick = (event: MouseEvent) => {
