@@ -66,6 +66,15 @@ const hasState = (automaton: Automaton, id: StateId) => automaton.states.some((s
 const sameAutomaton = (a: Automaton, b: Automaton) =>
   a === b || JSON.stringify(a) === JSON.stringify(b)
 
+/** Mover um estado não muda a linguagem nem os ids: a simulação continua valendo. */
+const withoutPositions = (a: Automaton) => ({
+  states: a.states.map(({ x: _x, y: _y, ...rest }) => rest),
+  transitions: a.transitions,
+})
+
+const onlyMoved = (a: Automaton, b: Automaton) =>
+  JSON.stringify(withoutPositions(a)) === JSON.stringify(withoutPositions(b))
+
 type ParsedSymbols = { ok: true; symbols: string[] } | { ok: false; error: string }
 
 function readSymbols(input: string): ParsedSymbols {
@@ -203,12 +212,13 @@ export const useEditor = create<EditorState>()(
 )
 
 /**
- * Toda mudança do autômato descarta a simulação e a origem pendente, e a seleção e a transição
- * em diálogo cujos estados sumiram. A regra fica numa assinatura, e não nas ações, porque
- * desfazer e refazer do zundo trocam o autômato por fora delas.
+ * Toda mudança do autômato, exceto mover estados, descarta a simulação e a origem pendente, e a
+ * seleção e a transição em diálogo cujos estados sumiram. A regra fica numa assinatura, e não nas
+ * ações, porque desfazer e refazer do zundo trocam o autômato por fora delas.
  */
 useEditor.subscribe((state, previous) => {
   if (state.automaton === previous.automaton) return
+  if (onlyMoved(state.automaton, previous.automaton)) return
   const { automaton, pendingTransition } = state
   const selection = selectionExists(automaton, state.selection) ? state.selection : null
   const dialog =

@@ -322,6 +322,54 @@ describe('simulação', () => {
     expect(editor().simulation).toBeNull()
   })
 
+  it('mover um estado mantém a simulação e a origem pendente', () => {
+    editor().loadAutomaton(PDF_EXAMPLE)
+    editor().startSimulation('ab')
+    editor().stepTo(1)
+    editor().moveState('q1', { x: 400, y: 300 })
+    expect(editor().automaton.states[1]).toMatchObject({ x: 400, y: 300 })
+    expect(editor().simulation?.step).toBe(1)
+
+    editor().setTool('add-transition')
+    editor().clickState('q0')
+    editor().moveState('q0', { x: 10, y: 10 })
+    expect(editor().pendingFrom).toBe('q0')
+  })
+
+  it('desfazer e refazer um movimento mantêm a simulação', () => {
+    editor().loadAutomaton(PDF_EXAMPLE)
+    editor().moveState('q1', { x: 400, y: 300 })
+    editor().startSimulation('ab')
+    history().undo()
+    expect(editor().automaton.states[1]).toMatchObject(PDF_EXAMPLE.states[1])
+    expect(editor().simulation).not.toBeNull()
+    history().redo()
+    expect(editor().automaton.states[1]).toMatchObject({ x: 400, y: 300 })
+    expect(editor().simulation).not.toBeNull()
+  })
+
+  it('renomear, marcar inicial ou editar transição descarta a simulação', () => {
+    const edits = [
+      () => editor().renameState('q1', 'fim'),
+      () => editor().setInitial('q1'),
+      () => editor().setTransitionSymbols(editor().automaton.transitions[0].id, 'c'),
+    ]
+    for (const edit of edits) {
+      editor().loadAutomaton(PDF_EXAMPLE)
+      editor().startSimulation('ab')
+      edit()
+      expect(editor().simulation).toBeNull()
+    }
+  })
+
+  it('desfazer uma edição que não é movimento descarta a simulação', () => {
+    editor().loadAutomaton(PDF_EXAMPLE)
+    editor().toggleAccepting('q1')
+    editor().startSimulation('ab')
+    history().undo()
+    expect(editor().simulation).toBeNull()
+  })
+
   it('carregar outro autômato descarta a simulação', () => {
     editor().loadAutomaton(PDF_EXAMPLE)
     editor().startSimulation('ab')
