@@ -65,34 +65,51 @@ type Automaton = { states: State[]; transitions: Transition[] }
 
 ## Fases (prazo: amanhã)
 ### Fase 0 — Setup (~30 min)
-- [ ] Vite + React + TS, Tailwind, shadcn init, React Flow, Zustand, motion, Vitest
+- [x] Vite + React + TS, Tailwind, shadcn init, React Flow, Zustand, motion, Vitest
 - [ ] Primeiro deploy no Vercel já com a tela vazia (garante que o deploy não vira problema no fim)
 
 ### Fase 1 — Núcleo do editor (~3 h) · OBRIGATÓRIO
-- [ ] Criar estado (duplo clique no canvas), arrastar, renomear
-- [ ] Marcar inicial (único) e aceitação (círculo duplo)
-- [ ] Criar transição arrastando entre estados; editar símbolos (vírgula, ε)
-- [ ] Laços e arestas curvas para ida-e-volta; símbolos do mesmo par agrupados
-- [ ] Selecionar / apagar (Delete), atalhos de teclado
-- [ ] Exportar / importar JSON
+- [x] Criar estado (duplo clique no canvas), arrastar, renomear
+- [x] Marcar inicial (único) e aceitação (círculo duplo)
+- [x] Criar transição entre estados (ficou em dois cliques, origem e destino, em vez de arrastar); editar símbolos (vírgula, ε)
+- [x] Laços e arestas curvas para ida-e-volta; símbolos do mesmo par agrupados
+- [x] Selecionar / apagar (Delete), atalhos de teclado
+- [x] Exportar / importar JSON
 
 ### Fase 2 — Conceito visível (~2 h) · DIFERENCIAL
-- [ ] Painel com a 5-tupla e tabela δ ao vivo
-- [ ] Detector AFD/AFN com destaque dos conflitos no grafo
-- [ ] Exportar SVG / PNG
-- [ ] Galeria de exemplos (ex.: nº par de a's, termina em "ab", AFN com ε)
+- [x] Painel com a 5-tupla e tabela δ ao vivo
+- [x] Detector AFD/AFN com destaque dos conflitos no grafo
+- [x] Exportar SVG / PNG
+- [x] Galeria de exemplos (nº ímpar de a's do PDF, termina em "ab", contém "aba" (AFN), só a's ou só b's (AFN com ε))
 
 ### Fase 3 — Simulação e polimento (~2 h) · SE DER TEMPO
-- [ ] Simulação passo a passo (play / pause / próximo / voltar)
-- [ ] Token animado percorrendo a aresta; cópias do AFN se dividindo e morrendo
-- [ ] Aceita → confetti · Rejeita → shake vermelho
-- [ ] Undo/redo, link compartilhável (autômato codificado na URL), dark mode
+- [x] Simulação passo a passo (play / pause / próximo / voltar)
+- [x] Token animado percorrendo a aresta; cópias do AFN se dividindo e morrendo
+- [x] Aceita → confetti · Rejeita → shake vermelho
+- [x] Undo/redo, link compartilhável (autômato codificado na URL)
+- [ ] ~~Dark mode~~ (não feito: ficou fora do escopo do item 2.2)
 
 ### Fase 4 — Entrega
-- [ ] Testes da lógica (Vitest) passando
+- [x] Testes da lógica (Vitest) passando (325 testes em 16 arquivos, `npm test`)
 - [ ] Deploy final no Vercel
 - [ ] Vídeo — **roteiro escrito por você** (o PDF pede); mencionar como a IA foi usada
 
+## O que ficou diferente do plano
+- **Dock e ilha de status:** o Floating Dock (Aceternity) e o Dynamic Island (Cult UI) foram avaliados e descartados. `ToolDock` e `StatusIsland` foram feitos com `motion` e Radix Toolbar, com a mesma ideia visual.
+- **Bibliotecas de UI usadas:** Animate UI só nas abas do painel; Magic UI em Confetti, Border Beam, Number Ticker e Shimmer Button.
+- **Não feitos:** Click Spark, Spotlight e o tema escuro.
+- **Transição:** criada com dois cliques (origem e destino) e um diálogo de símbolos, em vez de arrastar entre os estados.
+
 ## Registro de uso de IA (para o vídeo)
-- Planejamento da arquitetura e escolha de bibliotecas com Claude Code
-- (ir anotando aqui o que foi gerado, o que foi escrito/revisado à mão)
+O que foi feito com o Claude Code (Anthropic):
+- **Planejamento:** a arquitetura, a escolha das bibliotecas, este plano e o plano de implementação em 12 tarefas (`docs/superpowers/plans/2026-11-09-editor-automatos.md`).
+- **Implementação:** cada tarefa do plano (setup, núcleo teórico, store, canvas, painéis, dock, simulação) foi delegada a um subagente do Claude Code, uma tarefa por vez ou em paralelo quando os arquivos eram independentes.
+- **Revisão automática:** depois de cada tarefa, outro agente do Claude Code revisou o código. Os problemas apontados voltaram para um agente corrigir (houve uma rodada de correção nas tarefas 3, 4, 5, 8, 9, 10 e 11) e o resultado foi revisado de novo.
+- **Testes:** os testes do Vitest foram escritos pelos agentes junto com o código.
+- **Verificação no navegador:** em cada tarefa de interface (8 a 12), os agentes abriram o app num Chrome real com scripts descartáveis do Playwright (fora do repositório) e conferiram o comportamento e as capturas de tela, inclusive o build de produção, os exemplos, a simulação, as exportações e o link compartilhável.
+- **Documentação:** o `README.md` e este registro foram redigidos pelo Claude Code a partir do código e do histórico do projeto.
+- **Histórico do git:** por regra do projeto, os commits não mencionam a IA; o uso é documentado aqui e no vídeo.
+
+O que a IA não fez: o roteiro e a gravação do vídeo.
+
+(complete com suas palavras: o que você revisou/escreveu à mão)
