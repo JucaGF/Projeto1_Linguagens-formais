@@ -5,7 +5,7 @@ import { build } from '@/lib/automaton/build'
 import { simulate } from '@/lib/automaton/simulate'
 import type { Automaton } from '@/lib/automaton/types'
 import type { SimulationState } from '@/store/editor'
-import { islandDetails, islandStatus } from './status'
+import { islandDetails, islandStatus, warningCount } from './status'
 
 const status = (a: Automaton, simulation: SimulationState | null = null) =>
   islandStatus(a, analyze(a), simulation)
@@ -24,6 +24,15 @@ describe('islandStatus', () => {
 
   it('avisa o AFD incompleto', () => {
     const a = build({ states: ['q0', 'q1'], transitions: [['q0', 'a', 'q1']] })
+    expect(status(a)).toEqual({ tone: 'incomplete', text: 'AFD incompleto' })
+  })
+
+  it('sem estado inicial o AFD não ganha ✓', () => {
+    const a = build({
+      states: ['q0'],
+      accepting: ['q0'],
+      transitions: [['q0', 'a', 'q0']],
+    })
     expect(status(a)).toEqual({ tone: 'incomplete', text: 'AFD incompleto' })
   })
 
@@ -57,12 +66,12 @@ describe('islandStatus', () => {
 })
 
 describe('islandDetails', () => {
-  it('não lista avisos com o autômato vazio', () => {
+  it('não lista nada com o autômato vazio', () => {
     const empty = { states: [], transitions: [] }
-    expect(islandDetails(empty, analyze(empty))).toEqual([])
+    expect(islandDetails(empty, analyze(empty))).toEqual({ nfaReasons: [], warnings: [] })
   })
 
-  it('explica cada conflito antes dos avisos', () => {
+  it('separa os motivos de ser AFN dos avisos', () => {
     const a = build({
       states: ['q0', 'q1'],
       initial: 'q0',
@@ -71,10 +80,29 @@ describe('islandDetails', () => {
         ['q0', 'a,ε', 'q1'],
       ],
     })
-    expect(islandDetails(a, analyze(a))).toEqual([
-      'δ(q0, a) tem 2 destinos',
-      'ε-transição de q0 para q1',
-      'Nenhum estado de aceitação',
-    ])
+    expect(islandDetails(a, analyze(a))).toEqual({
+      nfaReasons: ['δ(q0, a) tem 2 destinos', 'ε-transição de q0 para q1'],
+      warnings: ['Nenhum estado de aceitação'],
+    })
+  })
+
+  it('um AFN válido não tem avisos', () => {
+    const a = build({
+      states: ['q0', 'q1'],
+      initial: 'q0',
+      accepting: ['q1'],
+      transitions: [
+        ['q0', 'a', 'q0'],
+        ['q0', 'a', 'q1'],
+      ],
+    })
+    expect(islandDetails(a, analyze(a)).warnings).toEqual([])
+  })
+})
+
+describe('warningCount', () => {
+  it('usa singular e plural', () => {
+    expect(warningCount(1)).toBe('1 aviso')
+    expect(warningCount(2)).toBe('2 avisos')
   })
 })

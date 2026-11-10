@@ -6,8 +6,8 @@ import { StatusIsland } from '@/components/toolbar/StatusIsland'
 import { Toaster } from '@/components/ui/sonner'
 import { TooltipProvider } from '@/components/ui/tooltip'
 
-/** Os toasts descem abaixo da ilha de status, que ocupa o topo. */
-const TOAST_OFFSET = { top: 64 }
+/** Os toasts sobem da base, longe da ilha de status; no celular, acima da gaveta fechada. */
+const TOAST_OFFSET = { bottom: 88 }
 
 function App() {
   return (
@@ -22,7 +22,7 @@ function App() {
             <SidePanel />
           </div>
         </ReactFlowProvider>
-        <Toaster position="top-center" offset={TOAST_OFFSET} mobileOffset={TOAST_OFFSET} />
+        <Toaster position="bottom-center" offset={TOAST_OFFSET} mobileOffset={TOAST_OFFSET} />
       </TooltipProvider>
     </MotionConfig>
   )

@@ -25,6 +25,7 @@ export function TransitionTable() {
   const makesNfa = (symbol: string, targets: string[]) =>
     targets.length > 1 || (symbol === EPSILON && targets.length > 0)
   const anyNfaCell = rows.some((row) => columns.some((c) => makesNfa(c, row.cells[c])))
+  const anyEmptyCell = rows.some((row) => columns.some((c) => row.cells[c].length === 0))
 
   return (
     <div className="flex flex-col gap-3 p-4">
@@ -43,13 +44,15 @@ export function TransitionTable() {
           <TableBody>
             {rows.map(({ state, cells }) => (
               <TableRow key={state.id} className="hover:bg-transparent">
-                <TableCell className="pl-3 font-medium">
-                  <span className="inline-block w-6 text-muted-foreground not-italic">
+                <TableHead scope="row" className="h-auto py-2 pl-3">
+                  <span className="inline-block w-6 text-muted-foreground not-italic" aria-hidden>
                     {state.isInitial ? '→' : ''}
                     {state.isAccepting ? '*' : ''}
                   </span>
                   {state.label}
-                </TableCell>
+                  {state.isInitial && <span className="sr-only">, inicial</span>}
+                  {state.isAccepting && <span className="sr-only">, de aceitação</span>}
+                </TableHead>
                 {columns.map((symbol) => {
                   const targets = cells[symbol]
                   const nfa = makesNfa(symbol, targets)
@@ -80,9 +83,11 @@ export function TransitionTable() {
         <li>
           <span className="math mr-1 text-sm">*</span>aceitação
         </li>
-        <li>
-          <span className="math mr-1 text-sm">∅</span>sem transição
-        </li>
+        {anyEmptyCell && (
+          <li>
+            <span className="math mr-1 text-sm">∅</span>sem transição
+          </li>
+        )}
         {anyNfaCell && (
           <li className="flex items-center gap-1.5">
             <span className="size-3 rounded-sm bg-(--status-nfa-bg) ring-1 ring-(--status-nfa-ink)/30" />

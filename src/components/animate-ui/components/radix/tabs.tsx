@@ -3,14 +3,12 @@ import {
   TabsList as TabsListPrimitive,
   TabsTrigger as TabsTriggerPrimitive,
   TabsContent as TabsContentPrimitive,
-  TabsContents as TabsContentsPrimitive,
   TabsHighlight as TabsHighlightPrimitive,
   TabsHighlightItem as TabsHighlightItemPrimitive,
   type TabsProps as TabsPrimitiveProps,
   type TabsListProps as TabsListPrimitiveProps,
   type TabsTriggerProps as TabsTriggerPrimitiveProps,
   type TabsContentProps as TabsContentPrimitiveProps,
-  type TabsContentsProps as TabsContentsPrimitiveProps,
 } from '@/components/animate-ui/primitives/radix/tabs';
 import { cn } from '@/lib/utils';
 
@@ -60,12 +58,6 @@ function TabsTrigger({ className, ...props }: TabsTriggerProps) {
   );
 }
 
-type TabsContentsProps = TabsContentsPrimitiveProps;
-
-function TabsContents(props: TabsContentsProps) {
-  return <TabsContentsPrimitive {...props} />;
-}
-
 type TabsContentProps = TabsContentPrimitiveProps;
 
 function TabsContent({ className, ...props }: TabsContentProps) {
@@ -81,11 +73,9 @@ export {
   Tabs,
   TabsList,
   TabsTrigger,
-  TabsContents,
   TabsContent,
   type TabsProps,
   type TabsListProps,
   type TabsTriggerProps,
-  type TabsContentsProps,
   type TabsContentProps,
 };

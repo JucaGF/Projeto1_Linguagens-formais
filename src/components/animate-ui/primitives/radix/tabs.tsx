@@ -2,12 +2,7 @@
 
 import * as React from 'react';
 import { Tabs as TabsPrimitive } from 'radix-ui';
-import {
-  motion,
-  AnimatePresence,
-  type HTMLMotionProps,
-  type Transition,
-} from 'motion/react';
+import { motion, AnimatePresence, type HTMLMotionProps } from 'motion/react';
 
 import {
   Highlight,
@@ -15,12 +10,8 @@ import {
   type HighlightProps,
   type HighlightItemProps,
 } from '@/components/animate-ui/primitives/effects/highlight';
-import { getStrictContext } from '@/lib/get-strict-context';
+import { getStrictContext } from '@/components/animate-ui/lib/get-strict-context';
 import { useControlledState } from '@/hooks/use-controlled-state';
-import {
-  AutoHeight,
-  type AutoHeightProps,
-} from '@/components/animate-ui/primitives/effects/auto-height';
 
 type TabsContextType = {
   value: string | undefined;
@@ -117,60 +108,6 @@ function TabsContent({
   );
 }
 
-type TabsContentsAutoProps = AutoHeightProps & {
-  mode?: 'auto-height';
-  children: React.ReactNode;
-  transition?: Transition;
-};
-
-type TabsContentsLayoutProps = Omit<HTMLMotionProps<'div'>, 'transition'> & {
-  mode: 'layout';
-  children: React.ReactNode;
-  transition?: Transition;
-};
-
-type TabsContentsProps = TabsContentsAutoProps | TabsContentsLayoutProps;
-
-const defaultTransition: Transition = {
-  type: 'spring',
-  stiffness: 200,
-  damping: 30,
-};
-
-function isAutoMode(props: TabsContentsProps): props is TabsContentsAutoProps {
-  return !('mode' in props) || props.mode === 'auto-height';
-}
-
-function TabsContents(props: TabsContentsProps) {
-  const { value } = useTabs();
-
-  if (isAutoMode(props)) {
-    const { transition = defaultTransition, ...autoProps } = props;
-
-    return (
-      <AutoHeight
-        data-slot="tabs-contents"
-        deps={[value]}
-        transition={transition}
-        {...autoProps}
-      />
-    );
-  }
-
-  const { transition = defaultTransition, style, ...layoutProps } = props;
-
-  return (
-    <motion.div
-      data-slot="tabs-contents"
-      layout="size"
-      layoutDependency={value}
-      style={{ overflow: 'hidden', ...style }}
-      transition={{ layout: transition }}
-      {...layoutProps}
-    />
-  );
-}
-
 export {
   Tabs,
   TabsHighlight,
@@ -178,12 +115,10 @@ export {
   TabsList,
   TabsTrigger,
   TabsContent,
-  TabsContents,
   type TabsProps,
   type TabsHighlightProps,
   type TabsHighlightItemProps,
   type TabsListProps,
   type TabsTriggerProps,
   type TabsContentProps,
-  type TabsContentsProps,
 };

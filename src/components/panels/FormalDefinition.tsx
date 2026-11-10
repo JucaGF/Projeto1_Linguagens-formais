@@ -11,8 +11,12 @@ const KIND_NAME = {
 } as const
 
 const SIGNATURE = {
-  DFA: 'δ : Q × Σ → Q',
-  NFA: 'δ : Q × Σε → P(Q)',
+  DFA: <>δ : Q × Σ → Q</>,
+  NFA: (
+    <>
+      δ : Q × Σ<sub>ε</sub> → P(Q)
+    </>
+  ),
 } as const
 
 function Count({ symbol, value }: { symbol: string; value: number }) {

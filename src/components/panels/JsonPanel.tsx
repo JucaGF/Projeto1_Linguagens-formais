@@ -1,6 +1,6 @@
 import { useReactFlow } from '@xyflow/react'
 import { CheckIcon, CopyIcon, DownloadIcon, FileUpIcon } from 'lucide-react'
-import { type ChangeEvent, useId, useMemo, useRef, useState } from 'react'
+import { type ChangeEvent, useEffect, useId, useMemo, useRef, useState } from 'react'
 import { toast } from 'sonner'
 import { FIT_VIEW } from '@/components/canvas/toFlow'
 import { Button } from '@/components/ui/button'
@@ -25,12 +25,15 @@ export function JsonPanel() {
   const json = useMemo(() => JSON.stringify(format.serialize(automaton), null, 2), [format, automaton])
 
   const [copied, setCopied] = useState(false)
+  const copiedTimer = useRef<ReturnType<typeof setTimeout>>(undefined)
+  useEffect(() => () => clearTimeout(copiedTimer.current), [])
   const copy = async () => {
     try {
       await navigator.clipboard.writeText(json)
       toast.success('JSON copiado')
       setCopied(true)
-      setTimeout(() => setCopied(false), COPIED_FEEDBACK_MS)
+      clearTimeout(copiedTimer.current)
+      copiedTimer.current = setTimeout(() => setCopied(false), COPIED_FEEDBACK_MS)
     } catch {
       toast.error('Não foi possível copiar o JSON')
     }
@@ -40,7 +43,7 @@ export function JsonPanel() {
     <div className="flex flex-col gap-6 p-4">
       <section className="flex flex-col gap-3">
         <div
-          role="radiogroup"
+          role="group"
           aria-label="Formato do JSON"
           className="grid grid-cols-2 rounded-lg bg-muted p-[3px]"
         >
@@ -48,10 +51,9 @@ export function JsonPanel() {
             <button
               key={f.id}
               type="button"
-              role="radio"
-              aria-checked={f.id === formatId}
+              aria-pressed={f.id === formatId}
               onClick={() => setFormatId(f.id)}
-              className="h-7 rounded-md text-xs font-medium text-muted-foreground transition-[color,background-color,box-shadow] duration-150 ease-(--ease-out) aria-checked:bg-background aria-checked:text-foreground aria-checked:shadow-sm"
+              className="h-7 rounded-md text-xs font-medium text-muted-foreground transition-[color,background-color,box-shadow] duration-150 ease-(--ease-out) aria-pressed:bg-background aria-pressed:text-foreground aria-pressed:shadow-sm"
             >
               {f.label}
             </button>
@@ -109,7 +111,13 @@ function ImportSection() {
     const file = event.target.files?.[0]
     event.target.value = ''
     if (!file) return
-    const content = await file.text()
+    let content: string
+    try {
+      content = await file.text()
+    } catch {
+      setError('Não foi possível ler o arquivo')
+      return
+    }
     setText(content)
     load(content)
   }

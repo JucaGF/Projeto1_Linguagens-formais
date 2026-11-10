@@ -31,23 +31,34 @@ export function islandStatus(
       text: `AFN · ${plural(analysis.conflicts.length, 'conflito', 'conflitos')}`,
     }
   }
-  if (analysis.missing.length > 0) return { tone: 'incomplete', text: 'AFD incompleto' }
+  if (analysis.initial === null || analysis.missing.length > 0) {
+    return { tone: 'incomplete', text: 'AFD incompleto' }
+  }
   return { tone: 'dfa', text: 'AFD ✓' }
 }
 
-/** O que a ilha lista ao expandir: o motivo de ser AFN, depois os avisos da análise. */
-export function islandDetails(a: Automaton, analysis: Analysis): string[] {
+export interface IslandDetails {
+  /** Por que o autômato é AFN: informação, não erro. */
+  nfaReasons: string[]
+  /** Os avisos da análise; só eles contam no selo da ilha. */
+  warnings: string[]
+}
+
+export const warningCount = (n: number) => plural(n, 'aviso', 'avisos')
+
+/** O que a ilha lista ao expandir. */
+export function islandDetails(a: Automaton, analysis: Analysis): IslandDetails {
   // sem estados, a própria ilha já diz o que fazer; "nenhum inicial" seria só ruído
-  if (a.states.length === 0) return []
+  if (a.states.length === 0) return { nfaReasons: [], warnings: [] }
   const label = new Map(a.states.map((s) => [s.id, s.label]))
   const name = (id: string) => label.get(id) ?? id
   const transitions = new Map(a.transitions.map((t) => [t.id, t]))
-  const conflicts = analysis.conflicts.map((c) => {
+  const nfaReasons = analysis.conflicts.map((c) => {
     if (c.kind === 'nondeterministic') {
       return `δ(${name(c.stateId)}, ${c.symbol}) tem ${plural(c.transitionIds.length, 'destino', 'destinos')}`
     }
     const t = transitions.get(c.transitionId)
     return t ? `ε-transição de ${name(t.from)} para ${name(t.to)}` : 'ε-transição'
   })
-  return [...conflicts, ...analysis.warnings]
+  return { nfaReasons, warnings: analysis.warnings }
 }

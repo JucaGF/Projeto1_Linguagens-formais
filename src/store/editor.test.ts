@@ -317,6 +317,13 @@ describe('simulação', () => {
     expect(editor().simulation).toBeNull()
   })
 
+  it('carregar outro autômato descarta a simulação', () => {
+    editor().loadAutomaton(PDF_EXAMPLE)
+    editor().startSimulation('ab')
+    editor().loadAutomaton(build({ states: ['p'], initial: 'p', transitions: [] }))
+    expect(editor().simulation).toBeNull()
+  })
+
   it('editar o autômato descarta a origem pendente da transição', () => {
     const [q0] = addTwoStates()
     editor().setTool('add-transition')

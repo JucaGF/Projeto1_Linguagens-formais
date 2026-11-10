@@ -1,5 +1,5 @@
 import { ChevronUpIcon } from 'lucide-react'
-import { type ReactNode, useState } from 'react'
+import { type ReactNode, useId, useRef, useState, useSyncExternalStore } from 'react'
 import {
   Tabs,
   TabsContent,
@@ -23,6 +23,14 @@ const TABS: { value: string; label: string; content: ReactNode }[] = [
 
 const CONTENT_FADE = { duration: 0.18, ease: [0.23, 1, 0.32, 1] } as const
 
+/** Mesmo corte do `max-md:` do Tailwind e do `@media (width < 48rem)` do index.css. */
+const DRAWER_QUERY = window.matchMedia('(width < 48rem)')
+const subscribeDrawer = (onChange: () => void) => {
+  DRAWER_QUERY.addEventListener('change', onChange)
+  return () => DRAWER_QUERY.removeEventListener('change', onChange)
+}
+const isDrawer = () => DRAWER_QUERY.matches
+
 /**
  * Painel de 380px à direita do canvas. Abaixo de 768px vira uma gaveta presa à base da tela,
  * fechada com só o cabeçalho à mostra.
@@ -30,17 +38,29 @@ const CONTENT_FADE = { duration: 0.18, ease: [0.23, 1, 0.32, 1] } as const
 export function SidePanel() {
   const [tab, setTab] = useState(TABS[0].value)
   const [drawerOpen, setDrawerOpen] = useState(false)
+  const drawer = useSyncExternalStore(subscribeDrawer, isDrawer)
+  // gaveta fechada: o conteúdo está fora da tela e não pode receber foco
+  const contentHidden = drawer && !drawerOpen
+  const contentId = useId()
+  const toggle = useRef<HTMLButtonElement>(null)
 
   return (
     <aside
       data-open={drawerOpen}
       aria-label="Painel do autômato"
+      onKeyDown={(event) => {
+        if (event.key !== 'Escape' || !drawer || !drawerOpen) return
+        setDrawerOpen(false)
+        toggle.current?.focus()
+      }}
       className="side-panel z-20 flex flex-col bg-background md:relative md:h-full md:w-[380px] md:shrink-0 md:border-l max-md:fixed max-md:inset-x-0 max-md:bottom-0 max-md:h-[min(72dvh,600px)] max-md:rounded-t-2xl max-md:border-t max-md:shadow-[0_-8px_30px_oklch(0_0_0/10%)]"
     >
       <button
+        ref={toggle}
         type="button"
         onClick={() => setDrawerOpen((open) => !open)}
         aria-expanded={drawerOpen}
+        aria-controls={contentId}
         className="relative flex h-(--drawer-peek) shrink-0 items-center justify-between px-4 pt-2 md:hidden"
       >
         <span
@@ -60,7 +80,13 @@ export function SidePanel() {
         />
       </button>
 
-      <Tabs value={tab} onValueChange={setTab} className="min-h-0 flex-1 gap-0">
+      <Tabs
+        id={contentId}
+        inert={contentHidden}
+        value={tab}
+        onValueChange={setTab}
+        className="min-h-0 flex-1 gap-0"
+      >
         <div className="shrink-0 border-b px-3 pt-3 pb-3 max-md:pt-0">
           <TabsList className="w-full">
             {TABS.map((t) => (
