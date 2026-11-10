@@ -3,6 +3,7 @@ import {
   edgeGeometry,
   formatNumber,
   initialArrowPath,
+  labelCenter,
   selfLoopGeometry,
   STATE_RADIUS,
   transitionShape,
@@ -18,6 +19,13 @@ const STATE_FONT_SIZE = 16
 const EDGE_FONT_SIZE = 14
 const LABEL_HALO_WIDTH = 4
 const TEXT_CENTERING = '0.35em'
+// caixa estimada do rótulo: largura média dos glifos da serifa e a altura da linha da tela
+const NARROW_GLYPHS = new Set([',', ' ', '.', ';', ':', 'i', 'j', 'l', '!', '|', "'"])
+const LABEL_HEIGHT = 1.2 * EDGE_FONT_SIZE + 2
+
+const labelWidth = (label: string) =>
+  [...label].reduce((sum, char) => sum + (NARROW_GLYPHS.has(char) ? 0.28 : 0.5), 0) *
+  EDGE_FONT_SIZE
 const FONT_FAMILY = 'Georgia, Times New Roman, Times, serif'
 const ARROW_URL = 'url(#arrow)'
 
@@ -89,9 +97,11 @@ export function toSvg(a: Automaton): string {
     const from = statesById.get(t.from)
     const to = statesById.get(t.to)
     if (!from || !to) continue
-    const { path, labelX, labelY } = transitionGeometry(a, t, from, to)
-    edgePaths.push(leaf('path', { d: path, 'marker-end': ARROW_URL }))
-    edgeLabels.push(text({ x: labelX, y: labelY, dy: TEXT_CENTERING }, formatSymbols(t.symbols)))
+    const geometry = transitionGeometry(a, t, from, to)
+    const symbols = formatSymbols(t.symbols)
+    const center = labelCenter(geometry, labelWidth(symbols), LABEL_HEIGHT)
+    edgePaths.push(leaf('path', { d: geometry.path, 'marker-end': ARROW_URL }))
+    edgeLabels.push(text({ x: center.x, y: center.y, dy: TEXT_CENTERING }, symbols))
   }
 
   const initialArrows = a.states
