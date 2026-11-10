@@ -8,28 +8,39 @@ import { useEditor } from '@/store/editor'
 const HASH_PREFIX = '#a='
 
 /**
- * Ao montar, carrega o autômato de `#a=<código>`. O link vira o ponto de partida: o histórico de
- * desfazer começa nele, e o hash fica na barra para o recarregar abrir o mesmo autômato.
+ * Carrega o autômato de `#a=<código>` e tira o código da barra: dali em diante o desenho salvo no
+ * navegador (com as edições feitas depois) é o que um recarregar abre. Se havia um desenho no
+ * canvas, desfazer o traz de volta; com o canvas vazio, o histórico começa no link.
  */
+function loadFromHash(fitView: () => void): void {
+  const { hash, pathname, search } = window.location
+  if (!hash.startsWith(HASH_PREFIX)) return
+  history.replaceState(null, '', pathname + search)
+
+  const automaton = decodeShare(hash.slice(HASH_PREFIX.length))
+  if (automaton === null) {
+    toast.error('Link inválido')
+    return
+  }
+  const hadWork = useEditor.getState().automaton.states.length > 0
+  useEditor.getState().loadAutomaton(automaton)
+  if (!hadWork) useEditor.temporal.getState().clear()
+  requestAnimationFrame(fitView)
+}
+
+/** Lê o link ao abrir a página e quando ele é colado numa aba já aberta (`hashchange`). */
 export function useShareLink(): { copyShareLink(): Promise<void> } {
   const { fitView } = useReactFlow()
   const read = useRef(false)
 
   useEffect(() => {
-    if (read.current) return
-    read.current = true
-    const { hash, pathname, search } = window.location
-    if (!hash.startsWith(HASH_PREFIX)) return
-
-    const automaton = decodeShare(hash.slice(HASH_PREFIX.length))
-    if (automaton === null) {
-      history.replaceState(null, '', pathname + search)
-      toast.error('Link inválido')
-      return
+    const load = () => loadFromHash(() => fitView(FIT_VIEW))
+    if (!read.current) {
+      read.current = true
+      load()
     }
-    useEditor.getState().loadAutomaton(automaton)
-    useEditor.temporal.getState().clear()
-    requestAnimationFrame(() => fitView(FIT_VIEW))
+    window.addEventListener('hashchange', load)
+    return () => window.removeEventListener('hashchange', load)
   }, [fitView])
 
   const copyShareLink = useCallback(async () => {
@@ -43,7 +54,6 @@ export function useShareLink(): { copyShareLink(): Promise<void> } {
     url.hash = HASH_PREFIX.slice(1) + code
     try {
       await navigator.clipboard.writeText(url.toString())
-      history.replaceState(null, '', url)
       toast.success('Link copiado')
     } catch {
       toast.error('Não foi possível copiar o link')
