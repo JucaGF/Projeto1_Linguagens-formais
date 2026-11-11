@@ -26,4 +26,4 @@ dist-ssr
 .superpowers/
 .vercel
 .env*
-.claude/worktrees/
+.claude

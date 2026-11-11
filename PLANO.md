@@ -101,15 +101,12 @@ type Automaton = { states: State[]; transitions: Transition[] }
 - **Transição:** criada com dois cliques (origem e destino) e um diálogo de símbolos, em vez de arrastar entre os estados.
 
 ## Registro de uso de IA (para o vídeo)
-O que foi feito com o Claude Code (Anthropic):
+O que foi feito com o Claude Code:
 - **Planejamento:** a arquitetura, a escolha das bibliotecas, este plano e o plano de implementação em 12 tarefas (`docs/superpowers/plans/2026-11-09-editor-automatos.md`).
 - **Implementação:** cada tarefa do plano (setup, núcleo teórico, store, canvas, painéis, dock, simulação) foi delegada a um subagente do Claude Code, uma tarefa por vez ou em paralelo quando os arquivos eram independentes.
 - **Revisão automática:** depois de cada tarefa, outro agente do Claude Code revisou o código. Os problemas apontados voltaram para um agente corrigir (houve uma rodada de correção nas tarefas 3, 4, 5, 8, 9, 10 e 11) e o resultado foi revisado de novo.
 - **Testes:** os testes do Vitest foram escritos pelos agentes junto com o código.
 - **Verificação no navegador:** em cada tarefa de interface (8 a 12), os agentes abriram o app num Chrome real com scripts descartáveis do Playwright (fora do repositório) e conferiram o comportamento e as capturas de tela, inclusive o build de produção, os exemplos, a simulação, as exportações e o link compartilhável.
-- **Documentação:** o `README.md` e este registro foram redigidos pelo Claude Code a partir do código e do histórico do projeto.
-- **Histórico do git:** por regra do projeto, os commits não mencionam a IA; o uso é documentado aqui e no vídeo.
-
 O que a IA não fez: o roteiro e a gravação do vídeo.
 
 (complete com suas palavras: o que você revisou/escreveu à mão)
